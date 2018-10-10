@@ -37,4 +37,17 @@ FpAddRelator := function(G, word)
     return F / R;
 end;
 
+FpReplaceRelatorsByProduct := function(G, i, j)
+    local F, R;
+
+    F := FreeGroupOfFpGroup(G);
+    R := ShallowCopy(RelatorsOfFpGroup(G));
+
+    # TODO: has to be a word over f and 1 in G
+    Add(R, R[i] * R[j]);
+    Remove(R, i);
+
+    return F / R;
+end;
+
 
