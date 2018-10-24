@@ -1,6 +1,3 @@
-F := FreeGroup("x", "y");
-T1 := F / [ F.1^2, F.2^3, (F.1*F.2)^7 ];
-
 TriangleGroup := function(p,q,r)
    local F;
    F := FreeGroup("x", "y");
@@ -50,4 +47,22 @@ FpReplaceRelatorsByProduct := function(G, i, j)
     return F / R;
 end;
 
-
+FpUglify := function(G)
+  local GENERATE, RELATE, REPLACE, i, x, rels, inds;
+  GENERATE := 1;
+  RELATE := 2;
+  REPLACE := 3;
+  for i in [1..100] do
+    x := RandomList([GENERATE, RELATE, REPLACE]);
+    rels := List(RelatorsOfFpGroup(G));
+    if x = GENERATE then
+      G := FpAddGenerator(G, Product(Shuffle(rels){[1..2]}));
+    elif x = RELATE then
+      G := FpAddRelator(G, Product(Shuffle(rels){[1..2]}));
+    elif x = REPLACE then
+      inds := Shuffle([1..Length(rels)]){[1..2]};
+      G := FpReplaceRelatorsByProduct(G, inds[1], inds[2]);
+    fi;
+  od;
+  return G;
+end;
