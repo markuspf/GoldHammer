@@ -7,6 +7,8 @@ from sympy.combinatorics.fp_groups import FpGroup
 from sympy.combinatorics.rewritingsystem import *
 from matplotlib import pyplot as plt
 import networkx as nx
+import cairo
+from subprocess import call
 
 
 def format_ltx(s):
@@ -129,7 +131,32 @@ def plot_digraph(g, title):
     plt.close()
 
 
+def plot_adjacency_matrix(g):
+    size = 1000
+    with cairo.SVGSurface("adjacency_mat.svg", size, size) as surface:
+        ctx = cairo.Context(surface)
+        n = len(g)
+        rectsize = float(size) / n
+        g_nodes = list(g.nodes())
+        for i in range(n):
+            for j in range(n):
+                val = 0
+                if i == j or (g_nodes[i], g_nodes[j]) in g.edges():
+                    val = 1
+                val = 1 - val
+                if val != 1:
+                    val = float(val)
+                    ctx.rectangle(i * rectsize, j * rectsize, rectsize, rectsize)
+                    ctx.set_source_rgba(val, val, val, 1.)
+                    ctx.fill()
+            ctx.stroke()
+
+    call(['convert', 'adjacency_mat.svg', 'adjacency_mat.png'])
+    os.remove('adjacency_mat.svg')
+
+
 if __name__ == "__main__":
     t = (2, 3, 7)
     g = make_cayley_graph(t, 12, 3)
     plot_digraph(g, str(t))
+    plot_adjacency_matrix(g)
