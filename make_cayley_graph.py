@@ -15,8 +15,9 @@ def format_ltx(s):
     r = s.replace('x**-1', 'x') \
          .replace("y**-1", "y^2") \
          .replace('<identity>', '1') \
-         .replace('*', '')
-    print(s, '->', r)
+         .replace('*', '') \
+         .replace('Y', 'y^2')
+    # print(s, '->', r)
     return r
 
 
@@ -46,7 +47,7 @@ def make_cayley_graph(radius, lookahead=0):
 
         print('source', format_ltx(str(g)))
 
-        for e in [x, y, y ** 2]:
+        for e in [x, y]:
             h = rws.reduce_using_automaton(g * e)
             print('\t', 'consider', e, '->', format_ltx(str(h)))
 
@@ -95,7 +96,7 @@ def make_latex_element(g):
     return '${' + s + '}$'
 
 
-def plot_digraph(g, title, fname='cayley_graph.png'):
+def plot_digraph(g, title, fname, format_f=lambda s: str(s)):
     plt.figure(figsize=(24, 24))
     plt.suptitle('cayley graph',
                  size=35,
@@ -109,17 +110,17 @@ def plot_digraph(g, title, fname='cayley_graph.png'):
                      # pos=nx.spring_layout(g, dim=2),
                      pos=nx.kamada_kawai_layout(g, dim=2),
                      # labels={nd : make_latex_element(nd) for nd in g.nodes()},
-                     labels={nd : '$' + format_ltx(str(nd)) + '$' for nd in g.nodes()},
-                     font_size=24,
+                     labels={nd : format_f(nd) for nd in g.nodes()},
+                     font_size=6,
                      font_family='arial',
                      font_weight='bold',
                      font_color='r',
                      alpha=1.,
                      node_color='#AAFFAA',
-                     node_size=1500,
+                     node_size=300,
                      width=[0.3 for (u, v, d) in g.edges(data=True)],
                      arrowstyle='-|>',
-                     arrowsize=25,
+                     arrowsize=12,
                      ax=ax)
     ax.set_title(title, fontsize=40)
     ax.set_axis_off()
@@ -158,7 +159,7 @@ def plot_adjacency_matrix(g, fname='adjacency_mat.png'):
     os.remove(svg_fname)
 
 
-def load_cayley_graph(filename):
+def load_transition_table(filename):
     s = ''
     with open(filename, 'r') as f:
         for line in f:
@@ -167,13 +168,10 @@ def load_cayley_graph(filename):
     print(fsa_info)
     g = nx.DiGraph()
     i = 1
-    for a, b, c in fsa_info:
-        if a:
-            g.add_edge(i, a)
-        if b:
-            g.add_edge(i, b)
-        if c:
-            g.add_edge(i, c)
+    for l in fsa_info:
+        for x in l:
+            if x:
+                g.add_edge(i, x)
         i += 1
     return g
 
@@ -224,8 +222,7 @@ def parse_element_rec(s):
                     k = j
                     break
             p = parse_element_rec(t[i+1:k])
-            j = k
-            i = k + 1
+            j, i = k, k + 1
             if i == len(t):
                 parsed += p
                 break
@@ -251,14 +248,37 @@ def parse_element_rec(s):
     return parsed
 
 
-def parse_element(s):
-    r = ''
-    while r != s:
-        r = s.replace('Xx', '')
-        r = s.replace('xX', '')
-        r = s.replace('Yy', '')
-        r = s.replace('yY', '')
-        s = r
+def reduce_element(t, s):
+    ss = ''
+    p, q, r = t
+    while ss != s:
+        ss = s
+        s = s.replace('X', 'x' * (p - 1))
+        s = s.replace('Y', 'y' * (q - 1))
+        s = s.replace('x' * p, '')
+        s = s.replace('y' * q, '')
+        s = s.replace('xy' * r, '')
+        s = s.replace('yyx' * r, 'xy')
+        for i in range(1, (r // 2) + (r & 1) + 1):
+            s = s.replace('yyx' * (r - i), 'xy' * i)
+#        s = s.replace('yyx' * 6, 'xy' * 1)
+#        s = s.replace('yyx' * 5, 'xy' * 2)
+#        s = s.replace('yyx' * 4, 'xy' * 3)
+#        s = s.replace('yyx' * 3, 'xy' * 4)
+        # s = s.replace('yyx'*2, 'xy'*5)
+        # s = s.replace('yyx'*1, 'xy'*7)
+    return s
+
+
+def parse_element(t, s):
+    if s == '<identity ...>':
+        return ''
+    return reduce_element(t, parse_element_rec(s))
+
+
+def element_ltx(s):
+    s = s.replace('^-1', '^{-1}')
+    s = s.replace('*', '')
     return s
 
 
@@ -270,35 +290,65 @@ def load_group_elements(filename):
     return eval(s)
 
 
+def make_edges(t, elems):
+    G = nx.DiGraph()
+    for g in elems:
+        sg = parse_element(t, g)
+        for h in elems:
+            if g == h:
+                continue
+            sh = parse_element(t, h)
+            for e in ['x', 'y']:
+                if reduce_element(t, sg + e) == sh:
+                    # print(g, '->', h)
+                    G.add_edge(g, h)
+    return G
+
+
 def load_group_edges(filename):
     s = ''
     with open(filename, 'r') as f:
         for line in f:
             s += line
-    return [[x - y, y - 1] for x, y in eval(s)]
+    edges = eval(s)
+    for i in range(len(edges)):
+        x, y = edges[i]
+        edges[i] = [x - 1, y - 1]
+    return edges
 
 
 def make_graph_from_elements(elems, edges):
     g = nx.DiGraph()
     for e in edges:
+        # print(e, '\t', elems[e[0]], '-->', elems[e[1]])
         g.add_edge(elems[e[0]], elems[e[1]])
     return g
 
 
 if __name__ == "__main__":
     plt.switch_backend('agg')
-    # g = make_cayley_graph(9, 2)
-    # plot_digraph(g, str((2, 3, 7)), 'cayley_graph.png')
-    # plot_adjacency_matrix(g, 'adjacency_mat.png')
-    for i in [7]:
+    if not os.path.exists('cayley_graph.png'):
+        g = make_cayley_graph(16, 4)
+        plot_digraph(g, str((2, 3, 7)), 'cayley_graph.png',
+                     lambda s: '$' + format_ltx(str(s)) + '$')
+        plot_adjacency_matrix(g, 'adjacency_mat.png')
+    for i in [7, 8, 9]:
         t = (2, 3, i)
+
         elems = load_group_elements('group_elements_' + str(i) + '.txt')
         edges = load_group_edges('group_edges_' + str(i) + '.txt')
+        print('edges', edges)
         g = make_graph_from_elements(elems, edges)
-        # for s in elems:
-        #     p = parse_element(s)
-        #     print(s, '->', p)
-        # g = load_cayley_graph('cayley_graph_%d.txt' % i)
-#        print('graph', g.edges())
-        plot_digraph(g, str(t), 'cayley_graph_%d%d%d.png' % t)
-        # plot_adjacency_matrix(g, 'adjacency_mat_%d%d%d.png' % t)
+        plot_digraph(g, str(t), 'cayley_graph_red_%d%d%d.png' % t,
+                     # lambda s: '$' + format_ltx('1' if str(s) == '<identity ...>' else parse_element(t, str(s))) + '$')
+                     lambda s: str(s))
+        plot_adjacency_matrix(g, 'adjacency_mat_red_%d%d%d.png' % t)
+
+#         g = make_edges(t, elems)
+#         plot_digraph(g, str(t), 'cayley_graph_reds_%d%d%d.png' % t,
+#                      lambda s: '$' + format_ltx('1' if str(s) == '<identity ...>' else parse_element(t, str(s))) + '$')
+#         plot_adjacency_matrix(g, 'adjacency_mat_reds_%d%d%d.png' % t)
+
+        g = load_transition_table('cayley_graph_%d.txt' % i)
+        plot_digraph(g, str(t), 'cayley_graph_tt_%d%d%d.png' % t)
+        plot_adjacency_matrix(g, 'adjacency_mat_tt_%d%d%d.png' % t)
