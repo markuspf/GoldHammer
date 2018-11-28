@@ -179,7 +179,7 @@ struct StringSystem {
 
 StringSystem triangle_group(int p, int q, int r) {
   StringSystem t(2);
-  StringSystem::gen_t x = 0, y = 1;
+  StringSystem::gen_t x = t[0], y = t[1];
   t.set_order({x}, p);
   t.set_order({y}, q);
   t.set_order({x, y}, r);
