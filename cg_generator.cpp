@@ -152,7 +152,7 @@ struct StringSystem {
   void fp_uglify(int no_iter = 10) noexcept {
     if(no_iter == 0)return;
     int choice = rand() % NO_OPTIONS;
-    if(choice == 0 && size() > 26) {
+    if(choice == GENERATE && size() > 26) {
       fp_uglify(no_iter);
       return;
     }
