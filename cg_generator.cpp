@@ -17,11 +17,11 @@ struct StringSystem {
   using gen_t = int;
   using word_t = std::vector<gen_t>;
 
-  int no_generators;
+  int no_generators = 0;
   std::vector<word_t> relators;
 
   StringSystem(size_t n) noexcept:
-    no_generators(n), relators()
+    relators()
   {
     for(int i = 0; i < n; ++i) {
       add_generator();
@@ -94,7 +94,7 @@ struct StringSystem {
     relators.push_back(multiply(inv, w));
   }
 
-  void print(gen_t gen) const {
+  std::string to_str(gen_t gen) const {
     std::string s;
     gen_t pos = gen;
     if(gen < 0) {
@@ -103,33 +103,33 @@ struct StringSystem {
     if(size() > 26) {
       s = std::string("g") + std::to_string(pos) + " ";
     } else {
-      s = 'a' + std::abs(pos);
+      s = 'a' + pos;
     }
     if(gen < 0) {
       for(auto &c : s) {
         c = toupper(c);
       }
     }
-    printf("%s", s.c_str());
+    return s;
   }
 
-  void print(const word_t &w) const {
+  std::string to_str(const word_t &w) const {
+    std::string s;
     for(int i = 0; i < w.size(); ++i) {
-      print(w[i]);
+      s += to_str(w[i]);
     }
+    return s;
   }
 
   void print() {
     std::cout << "GENERATORS" << std::endl;
     for(int i = 0; i < size(); ++i) {
-      print(i);
-      puts("");
+      puts(to_str(i).c_str());
     }
     puts("");
     std::cout << "RELATORS" << std::endl;
     for(auto r : relators) {
-      print(r);
-      puts("");
+      puts(to_str(r).c_str());
     }
   }
 
@@ -149,9 +149,13 @@ struct StringSystem {
     return multiply(relators[i], relators[j]);
   }
 
-  void fp_uglify(int no_iter = 100) noexcept {
+  void fp_uglify(int no_iter = 10) noexcept {
     if(no_iter == 0)return;
     int choice = rand() % NO_OPTIONS;
+    if(choice == 0 && size() > 26) {
+      fp_uglify(no_iter);
+      return;
+    }
     switch(choice) {
       case GENERATE:
         fp_add_generator(random_identity());
@@ -187,8 +191,13 @@ int main(int argc, char *argv[]) {
   srand(time(nullptr));
   auto t = triangle_group(2, 3, 7);
   t.fp_uglify();
-  t.print();
+  /* t.print(); */
   libsemigroups::RWS rws;
-  rws.set_report("/dev/stdout");
-  rws.confluent();
+  rws.set_report(true);
+  for(const auto &rel : t.relators) {
+    auto lhs = t.to_str(rel);
+    rws.add_rule(lhs.c_str(), "");
+    std::cout << "ADD RULE " << lhs << std::endl;
+  }
+  rws.knuth_bendix();
 }
