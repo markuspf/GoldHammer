@@ -1,4 +1,5 @@
 OPTFLAGS = -Ofast -march=native -mtune=native
+# OPTFLAGS = -g3
 CXXFLAGS = $(OPTFLAGS) -std=c++14 -I.
 LDFLAGS =
 OBJECTS = cg_generator
@@ -7,8 +8,9 @@ OBJECTS = cg_generator
 all : $(OBJECTS)
 
 
-cg_generator: cg_generator.cpp
-		$(CXX) $(CXXFLAGS) $(LDFLAGS) cg_generator.cpp libsemigroups/src/{rws,rwse,report,elements}.cc -o $@
+DEPS = libsemigroups/src/rws.cc libsemigroups/src/rwse.cc libsemigroups/src/report.cc libsemigroups/src/elements.cc
+cg_generator: cg_generator.cpp Makefile
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) cg_generator.cpp $(DEPS) -o $@
 
 clean:
-		rm -vf $(OBJECTS)
+	rm -vf $(OBJECTS)
