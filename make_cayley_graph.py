@@ -2,6 +2,7 @@
 
 
 import os
+import json
 from sympy.combinatorics.free_groups import *
 from sympy.combinatorics.fp_groups import FpGroup
 from sympy.combinatorics.rewritingsystem import *
@@ -112,7 +113,7 @@ def plot_digraph(g, title, fname, format_f=lambda s: str(s)):
                      # labels={nd : make_latex_element(nd) for nd in g.nodes()},
                      labels={nd : format_f(nd) for nd in g.nodes()},
                      font_size=6,
-                     font_family='arial',
+                     # font_family='arial',
                      font_weight='bold',
                      font_color='r',
                      alpha=1.,
@@ -283,11 +284,12 @@ def element_ltx(s):
 
 
 def load_group_elements(filename):
-    s = ''
     with open(filename, 'r') as f:
-        for line in f:
-            s += line
-    return eval(s)
+        j = json.load(f)
+    for i in range(len(j)):
+        j[i] = j[i].strip().replace(' ', '*')
+    print('len(j)', len(j))
+    return j
 
 
 def make_edges(t, elems):
@@ -306,14 +308,12 @@ def make_edges(t, elems):
 
 
 def load_group_edges(filename):
-    s = ''
     with open(filename, 'r') as f:
-        for line in f:
-            s += line
-    edges = eval(s)
+        edges = json.load(f)
     for i in range(len(edges)):
         x, y = edges[i]
         edges[i] = [x - 1, y - 1]
+        print(x - 1, y - 1)
     return edges
 
 
@@ -332,23 +332,31 @@ if __name__ == "__main__":
         plot_digraph(g, str((2, 3, 7)), 'cayley_graph.png',
                      lambda s: '$' + format_ltx(str(s)) + '$')
         plot_adjacency_matrix(g, 'adjacency_mat.png')
-    for i in [7, 8, 9]:
-        t = (2, 3, i)
+    elems = load_group_elements('cg_elements.txt')
+    edges = load_group_edges('cg_edges.txt')
+    g = make_graph_from_elements(elems, edges)
+    for e in edges:
+        print(elems[e[0]], '\t->\t', elems[e[1]])
+    plot_digraph(g, 'cg_graph', 'cg_graph.png')
+    plot_adjacency_matrix(g, 'cg_adjacency.png')
+    # for i in [7, 8, 9]:
+    #     t = (2, 3, i)
 
-        elems = load_group_elements('group_elements_' + str(i) + '.txt')
-        edges = load_group_edges('group_edges_' + str(i) + '.txt')
-        print('edges', edges)
-        g = make_graph_from_elements(elems, edges)
-        plot_digraph(g, str(t), 'cayley_graph_red_%d%d%d.png' % t,
-                     # lambda s: '$' + format_ltx('1' if str(s) == '<identity ...>' else parse_element(t, str(s))) + '$')
-                     lambda s: str(s))
-        plot_adjacency_matrix(g, 'adjacency_mat_red_%d%d%d.png' % t)
+    #     elems = load_group_elements('group_elements_' + str(i) + '.txt')
+    #     edges = load_group_edges('group_edges_' + str(i) + '.txt')
+    #     print('edges', edges)
+    #     g = make_graph_from_elements(elems, edges)
+    #     plot_digraph(g, str(t), 'cayley_graph_red_%d%d%d.png' % t,
+    #                  # lambda s: '$' + format_ltx('1' if str(s) == '<identity ...>' else parse_element(t, str(s))) + '$')
+    #                  lambda s: str(len(s)))
+    #                  # lambda s: str(s))
+    #     plot_adjacency_matrix(g, 'adjacency_mat_red_%d%d%d.png' % t)
 
-#         g = make_edges(t, elems)
-#         plot_digraph(g, str(t), 'cayley_graph_reds_%d%d%d.png' % t,
-#                      lambda s: '$' + format_ltx('1' if str(s) == '<identity ...>' else parse_element(t, str(s))) + '$')
-#         plot_adjacency_matrix(g, 'adjacency_mat_reds_%d%d%d.png' % t)
+# #         g = make_edges(t, elems)
+# #         plot_digraph(g, str(t), 'cayley_graph_reds_%d%d%d.png' % t,
+# #                      lambda s: '$' + format_ltx('1' if str(s) == '<identity ...>' else parse_element(t, str(s))) + '$')
+# #         plot_adjacency_matrix(g, 'adjacency_mat_reds_%d%d%d.png' % t)
 
-        g = load_transition_table('cayley_graph_%d.txt' % i)
-        plot_digraph(g, str(t), 'cayley_graph_tt_%d%d%d.png' % t)
-        plot_adjacency_matrix(g, 'adjacency_mat_tt_%d%d%d.png' % t)
+    #     g = load_transition_table('cayley_graph_%d.txt' % i)
+    #     plot_digraph(g, str(t), 'cayley_graph_tt_%d%d%d.png' % t)
+    #     plot_adjacency_matrix(g, 'adjacency_mat_tt_%d%d%d.png' % t)
