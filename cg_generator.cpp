@@ -1,9 +1,11 @@
 #include <iostream>
-#include <string>
 #include <type_traits>
 #include <cctype>
 #include <cstdlib>
 #include <ctime>
+#include <random>
+#include <algorithm>
+#include <string>
 #include <map>
 #include <vector>
 #include <queue>
@@ -155,12 +157,12 @@ struct StringSystem {
     return multiply(relators[i], relators[j]);
   }
 
-  inline void fp_uglify(int no_iter = 1000) noexcept {
+  inline void fp_uglify(int no_iter = 100) noexcept {
     if(no_iter == 0)return;
     int choice = rand() % NO_OPTIONS;
-    /* if(choice == GENERATE && size() == 26) { */
-    /*   choice = (rand() & 1) + GENERATE + 1; */
-    /* } */
+    if(choice == GENERATE && size() == 26) {
+      choice = (rand() & 1) + GENERATE + 1;
+    }
     switch(choice) {
       case GENERATE:
         fp_add_generator(random_identity());
@@ -195,7 +197,7 @@ StringSystem triangle_group(int p, int q, int r) {
 template <typename T>
 struct Graph {
   std::vector<T> vertices_;
-  std::map<int, int> edges_;
+  std::map<int, std::set<int>> edges_;
 
   Graph():
     vertices_(), edges_()
@@ -222,19 +224,37 @@ struct Graph {
   }
 
   void add_edge(int i, int j) noexcept {
-    edges_[i] = j;
+    edges_[i].insert(j);
   }
 };
 
 
-auto *make_cayley_graph(StringSystem &system, libsemigroups::RWS &rws) {
+void test_rws(StringSystem &system, libsemigroups::RWS &rws) {
+  std::string a = system.to_str(0);
+  std::string b = system.to_str(1);
+  assert(rws.test_equals(a+a, ""));
+  assert(rws.test_equals(b+b+b, ""));
+  auto ab = a + b;
+  assert(rws.test_equals(ab+ab+ab+ab+ab+ab+ab, ""));
+}
+
+
+auto *make_cayley_graph(StringSystem &system, libsemigroups::RWS &rws, int limit=300) {
   auto *graph_ptr = new Graph<std::string>();
   auto &graph = *graph_ptr;
   graph.add_vertex("");
   std::set<int> seen;
   using word_t = StringSystem::word_t;
-  int limit = 300;
   size_t graph_ind = 0;
+
+  std::vector<int> generators(system.size());
+  for(int i = 0; i < generators.size(); ++i) {
+      generators[i] = i;
+  }
+  std::random_device rd;
+  std::mt19937 g(rd());
+  std::shuffle(std::begin(generators), std::end(generators), g);
+
   do {
     // take new element, g
     int left = graph.size();
@@ -268,7 +288,7 @@ auto *make_cayley_graph(StringSystem &system, libsemigroups::RWS &rws) {
     std::cout << "take '" << g << "'" << std::endl;
 
     // try different outcomes from it
-    for(int i = 0; i < system.size(); ++i) {
+    for(auto i : generators) {
       auto n = g + system.to_str(system[i]);
       std::cout << "\tconsider '" << n << "'" << std::endl;
       // check if the new word is already cached
@@ -289,13 +309,11 @@ auto *make_cayley_graph(StringSystem &system, libsemigroups::RWS &rws) {
       if(h_ind == graph.size()) {
         std::cout << "\t-> new vertex '" << n << "'" << std::endl;
         graph.add_vertex(n);
-        graph.add_edge(g_ind, h_ind);
       } else {
         auto h = h_save;
-        if(g_ind != h_ind) {
-          graph.add_edge(g_ind, h_ind);
-        }
       }
+      graph.add_edge(g_ind, h_ind);
+      std::cout << "\t\tconnect: " << g_ind << " to " << h_ind << std::endl;
     }
 
     ++graph_ind;
@@ -341,20 +359,27 @@ void write_edges(std::string filename, Graph<std::string> graph) {
   int line = 1;
   int i = 0;
   for(auto &edge : graph.edges()) {
-    std::string e = " [";
-    e += std::to_string(edge.first + 1);
-    e += ", ";
-    e += std::to_string(edge.second + 1);
-    e += "]";
-    if(i != graph.edges().size() - 1) {
-      e += ",";
-    }
-    if(line + e.length() < 80) {
-      fprintf(fp, "%s", e.c_str());
-      line += e.length();
-    } else {
-      fprintf(fp, "\n%s", e.c_str());
-      line = e.length();
+    int j = 0;
+    bool last_i = (i == graph.edges().size() - 1);
+    auto &from = edge.first;
+    for(auto &to : edge.second) {
+      bool last_j = (j == edge.second.size() - 1);
+      std::string e = " [";
+      e += std::to_string(from + 1);
+      e += ", ";
+      e += std::to_string(to + 1);
+      e += "]";
+      if(!(last_i && last_j)) {
+        e += ",";
+      }
+      if(line + e.length() < 80) {
+        fprintf(fp, "%s", e.c_str());
+        line += e.length();
+      } else {
+        fprintf(fp, "\n%s", e.c_str());
+        line = e.length();
+      }
+      ++j;
     }
     ++i;
   }
@@ -366,7 +391,7 @@ void write_edges(std::string filename, Graph<std::string> graph) {
 int main(int argc, char *argv[]) {
   srand(time(nullptr));
   auto t = triangle_group(2, 3, 7);
-  t.fp_uglify();
+  /* t.fp_uglify(); */
   t.print();
   libsemigroups::RWS rws;
   rws.set_report(true);
@@ -377,7 +402,8 @@ int main(int argc, char *argv[]) {
   }
   rws.set_max_rules(800);
   rws.knuth_bendix();
-  auto *g = make_cayley_graph(t, rws);
+  test_rws(t, rws);
+  auto *g = make_cayley_graph(t, rws, 300);
   fflush(stdout);
   write_elements("cg_elements.txt", *g);
   write_edges("cg_edges.txt", *g);
