@@ -4,4 +4,5 @@
 *.jpeg
 *.svg
 nohup.out
+cg_generator
 libsemigroups
