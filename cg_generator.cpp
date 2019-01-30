@@ -48,7 +48,7 @@ struct StringSystem {
   }
 
   void set_order(const word_t &&word, size_t p) noexcept {
-    auto rel = std::remove_reference_t<decltype(word)>();
+    auto rel = word_t();
     for(int i = 0; i < p; ++i) {
       for(auto &e : word) {
         rel.push_back(e);
@@ -229,16 +229,6 @@ struct Graph {
 };
 
 
-void test_rws(StringSystem &system, libsemigroups::RWS &rws) {
-  std::string a = system.to_str(0);
-  std::string b = system.to_str(1);
-  assert(rws.test_equals(a+a, ""));
-  assert(rws.test_equals(b+b+b, ""));
-  auto ab = a + b;
-  assert(rws.test_equals(ab+ab+ab+ab+ab+ab+ab, ""));
-}
-
-
 auto *make_cayley_graph(StringSystem &system, libsemigroups::RWS &rws, int limit=300) {
   auto *graph_ptr = new Graph<std::string>();
   auto &graph = *graph_ptr;
@@ -390,7 +380,7 @@ void write_edges(std::string filename, Graph<std::string> graph) {
 
 int main(int argc, char *argv[]) {
   srand(time(nullptr));
-  auto t = triangle_group(2, 3, 7);
+  auto t = triangle_group(2, 4, 9);
   /* t.fp_uglify(); */
   t.print();
   libsemigroups::RWS rws;
@@ -402,7 +392,6 @@ int main(int argc, char *argv[]) {
   }
   rws.set_max_rules(800);
   rws.knuth_bendix();
-  test_rws(t, rws);
   auto *g = make_cayley_graph(t, rws, 300);
   fflush(stdout);
   write_elements("cg_elements.txt", *g);
