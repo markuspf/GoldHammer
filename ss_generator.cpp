@@ -30,16 +30,17 @@ int main(const int argc, char **argv) {
   seed_rng();
 
   int p = 2, q = 3, r = 7;
+  int ugl = (1 + rand()) % 3;
   if(argc >= 4) {
     p = atoi(argv[1]), q = atoi(argv[2]), r = atoi(argv[3]);
   }
   uint64_t id = (uint64_t(rand()) << 31) | uint64_t(rand());
   char fname[80];
-  sprintf(fname, "cg_system_%d-%d-%d_%s.txt", p, q, r, std::to_string(id).c_str());
+  sprintf(fname, "cg_system_%d-%d-%d_%d_%s.txt", p, q, r, ugl, std::to_string(id).c_str());
   std::string filename = fname;
 
   auto t = triangle_group(p, q, r);
-  t.fp_uglify(2);
+  t.fp_uglify(ugl);
   t.to_file(filename);
   t.print();
 }

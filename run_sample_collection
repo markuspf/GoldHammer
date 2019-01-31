@@ -5,6 +5,21 @@
 #   ./ss_generator 2 3 7
 # done
 
+n=10 # total permitted number
+for p in 2; do
+  for q in 3; do
+    for r in 7; do
+      c=0 # count existing files
+      for i in cg_system_${p}-${q}-${r}*; do
+        (++c)
+      done
+      for i in $(seq $c $n); do
+        ./ss_generator $p $q $r
+      done
+    done
+  done
+done
+
 for i in cg_system*; do
   elems="${i/system/elements}"
   edges="${i/system/edges}"
@@ -16,6 +31,8 @@ for i in cg_system*; do
 done
 
 for i in cg_system*; do
+  elems="${i/system/elements}"
+  edges="${i/system/edges}"
   adj="${i/system/adjacency_mat/}"
   graph="${i/system/graph/}"
   if ! [ -e "${adj}" ]; then
