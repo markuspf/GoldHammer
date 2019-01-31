@@ -8,8 +8,8 @@ OBJECTS = cg_generator
 all : $(OBJECTS)
 
 
-DEPS = libsemigroups/src/rws.cc libsemigroups/src/rwse.cc libsemigroups/src/report.cc libsemigroups/src/elements.cc
-cg_generator: cg_generator.cpp Makefile
+DEPS = StringSystem.hpp libsemigroups/src/rws.cc libsemigroups/src/rwse.cc libsemigroups/src/report.cc libsemigroups/src/elements.cc
+cg_generator: cg_generator.cpp StringSystem.hpp Makefile
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) cg_generator.cpp $(DEPS) -o $@
 
 clean:
