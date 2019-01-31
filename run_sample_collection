@@ -1,0 +1,26 @@
+#!/bin/bash
+
+
+# for i in {1..1}; do
+#   ./ss_generator 2 3 7
+# done
+
+for i in cg_system*; do
+  elems="${i/system/elements}"
+  edges="${i/system/edges}"
+  if ! [ -e "${edges}" ]; then
+    ./cg_generator "${i}"
+  elif ! [ -e "${elems}" ]; then
+    ./cg_generator "${i}"
+  fi
+done
+
+for i in cg_system*; do
+  adj="${i/system/adjacency_mat/}"
+  graph="${i/system/graph/}"
+  if ! [ -e "${adj}" ]; then
+    ./make_cayley_graph.py "${elems}" "${edges}"
+  elif ! [ -e "${graph}" ]; then
+    ./make_cayley_graph.py "${elems}" "${edges}"
+  fi
+done

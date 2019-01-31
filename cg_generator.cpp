@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <map>
 #include <queue>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include <libsemigroups/src/semigroups.h>
 #include <libsemigroups/src/rws.h>
@@ -15,16 +17,6 @@
 
 
 #include <StringSystem.hpp>
-
-
-StringSystem triangle_group(int p, int q, int r) {
-  auto t = StringSystem(2);
-  StringSystem::gen_t x = t[0], y = t[1];
-  t.set_order({x}, p);
-  t.set_order({y}, q);
-  t.set_order({x, y}, r);
-  return t;
-}
 
 
 template <typename T>
@@ -211,25 +203,48 @@ void write_edges(std::string filename, Graph<std::string> graph) {
   fclose(fp);
 }
 
+
+void seed_rng() {
+  int fd=open("/dev/urandom", O_RDONLY);
+  if(fd==-1) abort();
+  unsigned seed,pos = 0;
+  while(pos<sizeof(seed)){int a=read(fd,(char*)&seed+pos,sizeof(seed)-pos);if(a<=0)abort();pos += a;}
+  srand(seed);
+  close(fd);
+}
+
+
+void replaceAll(std::string &str, const std::string &from, const std::string &to) {
+	if(from.empty())
+		return;
+	size_t start_pos = 0;
+	while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+		str.replace(start_pos, from.length(), to);
+		start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+	}
+}
+
 int main(int argc, char *argv[]) {
-  srand(time(nullptr));
-  auto t = triangle_group(2, 4, 9);
-  t.fp_uglify(20);
-  t.to_file("cg_system.txt");
-  t = StringSystem::from_file("cg_system.txt");
+  seed_rng();
+  std::string fname = (argc > 1) ? argv[1] : "cg_system.txt";
+  auto t = StringSystem::from_file(fname);
   t.print();
-  /* libsemigroups::RWS rws; */
-  /* rws.set_report(true); */
-  /* for(const auto &rel : t.relators) { */
-  /*   auto lhs = t.to_str(rel); */
-  /*   rws.add_rule(lhs.c_str(), ""); */
-  /*   std::cout << "ADD RULE " << lhs << std::endl; */
-  /* } */
-  /* rws.set_max_rules(400); */
-  /* rws.knuth_bendix(); */
-  /* auto *g = make_cayley_graph(t, rws, 500); */
-  /* fflush(stdout); */
-  /* write_elements("cg_elements.txt", *g); */
-  /* write_edges("cg_edges.txt", *g); */
-  /* delete g; */
+  libsemigroups::RWS rws;
+  rws.set_report(true);
+  for(const auto &rel : t.relators) {
+    auto lhs = t.to_str(rel);
+    rws.add_rule(lhs.c_str(), "");
+    /* std::cout << "ADD RULE " << lhs << std::endl; */
+  }
+  rws.set_max_rules(800);
+  rws.knuth_bendix();
+  auto *g = make_cayley_graph(t, rws, 300);
+  fflush(stdout);
+
+  std::string elems = fname, edges = fname;
+	replaceAll(elems, "cg_system", "cg_elements");
+	replaceAll(edges, "cg_system", "cg_edges");
+  write_elements(elems, *g);
+  write_edges(edges, *g);
+  delete g;
 }

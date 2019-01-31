@@ -2,10 +2,8 @@
 
 
 import os
+import sys
 import json
-from sympy.combinatorics.free_groups import *
-from sympy.combinatorics.fp_groups import FpGroup
-from sympy.combinatorics.rewritingsystem import *
 from matplotlib import pyplot as plt
 import networkx as nx
 import cairo
@@ -20,63 +18,6 @@ def format_ltx(s):
          .replace('Y', 'y^2')
     # print(s, '->', r)
     return r
-
-
-def make_cayley_graph(radius, lookahead=0):
-    t = (2, 3, 7)
-    cg = nx.DiGraph(directed=True)
-    p, q, r = t
-
-    f, x, y = free_group(["x", "y"])
-    fp = FpGroup(f, [x ** p, y ** q, (x * y) ** r])
-    rws = RewritingSystem(fp)
-
-    seen = [f.identity]
-    queue = [[seen[0], 0]]
-    depths = [0]
-
-    finished = False
-    while not finished and len(queue) > 0:
-        print('seen', seen)
-        print('queue', queue)
-        print('depths', depths)
-
-        g, g_ind = queue[0]
-        queue = queue[1:]
-
-        g = rws.reduce_using_automaton(g)
-
-        print('source', format_ltx(str(g)))
-
-        for e in [x, y]:
-            h = rws.reduce_using_automaton(g * e)
-            print('\t', 'consider', e, '->', format_ltx(str(h)))
-
-            h_ind = 1
-            while h_ind < len(seen):
-                if h == seen[h_ind]:
-                    break
-                else:
-                    h_ind += 1
-
-            if h_ind == len(seen):
-                print('\t\t', 'new element', format_ltx(str(h)))
-                cg.add_node(h)
-                cg.add_edge(g, h)
-                seen += [h]
-                queue += [[h, h_ind]]
-                depths += [depths[g_ind] + 1]
-                if depths[h_ind] > radius + lookahead:
-                    finished = True
-                    break
-            elif h_ind < len(seen) and g_ind != h_ind:
-                cg.add_edge(g, h)
-                if depths[g_ind] + 1 < depths[h_ind]:
-                    depths[h_ind] = depths[g_ind] + 1
-        print()
-    for i in [ind for ind in range(len(seen)) if depths[ind] > radius]:
-        cg.remove_node(seen[i])
-    return cg
 
 
 def make_latex_element(g):
@@ -98,7 +39,7 @@ def make_latex_element(g):
 
 
 def plot_digraph(g, title, fname, format_f=lambda s: str(s)):
-    plt.figure(figsize=(24, 24))
+    plt.figure(figsize=(36, 36))
     plt.suptitle('cayley graph',
                  size=35,
                  family='monospace',
@@ -158,23 +99,6 @@ def plot_adjacency_matrix(g, fname='adjacency_mat.png'):
 
     call(['convert', svg_fname, fname])
     os.remove(svg_fname)
-
-
-def load_transition_table(filename):
-    s = ''
-    with open(filename, 'r') as f:
-        for line in f:
-            s += line
-    fsa_info = eval(s)
-    print(fsa_info)
-    g = nx.DiGraph()
-    i = 1
-    for l in fsa_info:
-        for x in l:
-            if x:
-                g.add_edge(i, x)
-        i += 1
-    return g
 
 
 def parse_element_rec(s):
@@ -327,36 +251,13 @@ def make_graph_from_elements(elems, edges):
 
 if __name__ == "__main__":
     plt.switch_backend('agg')
-    if not os.path.exists('cayley_graph.png'):
-        g = make_cayley_graph(16, 4)
-        plot_digraph(g, str((2, 3, 7)), 'cayley_graph.png',
-                     lambda s: '$' + format_ltx(str(s)) + '$')
-        plot_adjacency_matrix(g, 'adjacency_mat.png')
-    elems = load_group_elements('cg_elements.txt')
-    edges = load_group_edges('cg_edges.txt')
+    felems, fedges = 'cg_elements.txt', 'cg_edges.txt'
+    if len(sys.argv) >= 3:
+        felems, fedges = sys.argv[1], sys.argv[2]
+    elems = load_group_elements(felems)
+    edges = load_group_edges(fedges)
     g = make_graph_from_elements(elems, edges)
     for e in edges:
         print(elems[e[0]], '\t->\t', elems[e[1]])
-    plot_digraph(g, 'cg_graph', 'cg_graph.png')
-    plot_adjacency_matrix(g, 'cg_adjacency.png')
-    # for i in [7, 8, 9]:
-    #     t = (2, 3, i)
-
-    #     elems = load_group_elements('group_elements_' + str(i) + '.txt')
-    #     edges = load_group_edges('group_edges_' + str(i) + '.txt')
-    #     print('edges', edges)
-    #     g = make_graph_from_elements(elems, edges)
-    #     plot_digraph(g, str(t), 'cayley_graph_red_%d%d%d.png' % t,
-    #                  # lambda s: '$' + format_ltx('1' if str(s) == '<identity ...>' else parse_element(t, str(s))) + '$')
-    #                  lambda s: str(len(s)))
-    #                  # lambda s: str(s))
-    #     plot_adjacency_matrix(g, 'adjacency_mat_red_%d%d%d.png' % t)
-
-# #         g = make_edges(t, elems)
-# #         plot_digraph(g, str(t), 'cayley_graph_reds_%d%d%d.png' % t,
-# #                      lambda s: '$' + format_ltx('1' if str(s) == '<identity ...>' else parse_element(t, str(s))) + '$')
-# #         plot_adjacency_matrix(g, 'adjacency_mat_reds_%d%d%d.png' % t)
-
-    #     g = load_transition_table('cayley_graph_%d.txt' % i)
-    #     plot_digraph(g, str(t), 'cayley_graph_tt_%d%d%d.png' % t)
-    #     plot_adjacency_matrix(g, 'adjacency_mat_tt_%d%d%d.png' % t)
+    plot_digraph(g, 'cg_graph', fedges.replace('cg_edges', 'cg_graph').replace('.txt', '.png'))
+    plot_adjacency_matrix(g, fedges.replace('cg_edges', 'cg_adjacency').replace('.txt', '.png'))
