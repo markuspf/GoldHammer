@@ -1,5 +1,6 @@
 .ropeproject
-*.txt
+!requirements.txt
+data/
 *.png
 *.jpeg
 *.svg

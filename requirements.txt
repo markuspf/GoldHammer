@@ -1,0 +1,4 @@
+numpy>=1.13.0
+pycairo>=1.15.0
+networkx>=1.10
+matplotlib>=2.1.0
