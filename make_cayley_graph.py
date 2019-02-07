@@ -10,6 +10,9 @@ import cairo
 from subprocess import call
 
 
+from cayley_graph_utils import *
+
+
 def format_ltx(s):
     r = s.replace('x**-1', 'x') \
          .replace("y**-1", "y^2") \
@@ -38,7 +41,10 @@ def make_latex_element(g):
     return '${' + s + '}$'
 
 
-def plot_digraph(g, title, fname, format_f=lambda s: str(s)):
+def plot_digraph(gdata, title, fname, format_f=lambda s: str(s)):
+    g, data = gdata
+    colors = ['r', 'g', 'b', 'k', 'm', 'c']
+    get_color = lambda n: colors[n % len(colors)]
     plt.figure(figsize=(36, 36))
     plt.suptitle('cayley graph',
                  size=35,
@@ -57,6 +63,7 @@ def plot_digraph(g, title, fname, format_f=lambda s: str(s)):
                      # font_family='arial',
                      font_weight='bold',
                      font_color='r',
+                     edge_color='k',
                      alpha=1.,
                      node_color='#AAFFAA',
                      node_size=300,
@@ -76,8 +83,18 @@ def plot_digraph(g, title, fname, format_f=lambda s: str(s)):
     plt.close()
 
 
-def plot_adjacency_matrix(g, fname='adjacency_mat.png'):
-    size = 1000
+def plot_adjacency_matrix(gdata, fname='adjacency_mat.png'):
+    g, data = gdata
+    colors = [
+        (1, 0, 0),
+        (0, 1, 0),
+        (0, 0, 1),
+        (0, 0, 0),
+        (1, 0, 1),
+        (0, 1, 1)
+    ]
+    get_color = lambda n: colors[n % len(colors)]
+    size = len(g.nodes())
     svg_fname = fname.replace('.png', '.svg')
     with cairo.SVGSurface(svg_fname, size, size) as surface:
         ctx = cairo.Context(surface)
@@ -86,14 +103,13 @@ def plot_adjacency_matrix(g, fname='adjacency_mat.png'):
         g_nodes = list(g.nodes())
         for i in range(n):
             for j in range(n):
-                val = 0
-                if i == j or (g_nodes[i], g_nodes[j]) in g.edges():
-                    val = 1
-                val = 1 - val
-                if val != 1:
-                    val = float(val)
+                edge = (g_nodes[i], g_nodes[j])
+                if i == j or edge in g.edges():
                     ctx.rectangle(i * rectsize, j * rectsize, rectsize, rectsize)
-                    ctx.set_source_rgba(val, val, val, 1.)
+                    # color = get_color(g.get_edge_data(*edge)['generator'])
+                    color = get_color(data[i][j] if i != j else 3)
+                    r, green, b = color
+                    ctx.set_source_rgba(r, green, b, 1.)
                     ctx.fill()
             ctx.stroke()
 
@@ -207,48 +223,6 @@ def element_ltx(s):
     return s
 
 
-def load_group_elements(filename):
-    with open(filename, 'r') as f:
-        j = json.load(f)
-    for i in range(len(j)):
-        j[i] = j[i].strip().replace(' ', '*')
-    print('len(j)', len(j))
-    return j
-
-
-def make_edges(t, elems):
-    G = nx.DiGraph()
-    for g in elems:
-        sg = parse_element(t, g)
-        for h in elems:
-            if g == h:
-                continue
-            sh = parse_element(t, h)
-            for e in ['x', 'y']:
-                if reduce_element(t, sg + e) == sh:
-                    # print(g, '->', h)
-                    G.add_edge(g, h)
-    return G
-
-
-def load_group_edges(filename):
-    with open(filename, 'r') as f:
-        edges = json.load(f)
-    for i in range(len(edges)):
-        x, y = edges[i]
-        edges[i] = [x - 1, y - 1]
-        print(x - 1, y - 1)
-    return edges
-
-
-def make_graph_from_elements(elems, edges):
-    g = nx.DiGraph()
-    for e in edges:
-        # print(e, '\t', elems[e[0]], '-->', elems[e[1]])
-        g.add_edge(elems[e[0]], elems[e[1]])
-    return g
-
-
 if __name__ == "__main__":
     plt.switch_backend('agg')
     felems, fedges = 'cg_elements.txt', 'cg_edges.txt'
@@ -256,8 +230,9 @@ if __name__ == "__main__":
         felems, fedges = sys.argv[1], sys.argv[2]
     elems = load_group_elements(felems)
     edges = load_group_edges(fedges)
-    g = make_graph_from_elements(elems, edges)
+    g, data = make_graph_from_elements(elems, edges)
     for e in edges:
         print(elems[e[0]], '\t->\t', elems[e[1]])
-    plot_digraph(g, 'cg_graph', fedges.replace('cg_edges', 'cg_graph').replace('.txt', '.png'))
-    plot_adjacency_matrix(g, fedges.replace('cg_edges', 'cg_adjacency').replace('.txt', '.png'))
+    if len(g.nodes()) < 1000:
+        plot_digraph((g, data), 'cg_graph', fedges.replace('cg_edges', 'cg_graph').replace('.txt', '.png'))
+    plot_adjacency_matrix((g, data), fedges.replace('cg_edges', 'cg_adjacency').replace('.txt', '.png'))

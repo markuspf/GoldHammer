@@ -213,7 +213,7 @@ struct StringSystem {
     switch(choice) {
       case GENERATE:
         /* fp_add_generator(random_identity()); */
-        fp_add_shortcut(random_word());
+        fp_add_shortcut(random_word(5));
       break;
       /* case RELATE: */
       /*   fp_add_relator(random_identity()); */

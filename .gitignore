@@ -6,4 +6,5 @@
 nohup.out
 ss_generator
 cg_generator
+ss_cat
 libsemigroups

@@ -22,7 +22,7 @@
 template <typename T>
 struct Graph {
   std::vector<T> vertices_;
-  std::map<int, std::set<int>> edges_;
+  std::map<int, std::set<std::pair<int, StringSystem::gen_t>>> edges_;
 
   Graph():
     vertices_(), edges_()
@@ -48,8 +48,8 @@ struct Graph {
     vertices_.push_back(val);
   }
 
-  void add_edge(int i, int j) noexcept {
-    edges_[i].insert(j);
+  void add_edge(int i, int j, StringSystem::gen_t g) noexcept {
+    edges_[i].insert(std::pair<decltype(j), decltype(g)>(j, g));
   }
 };
 
@@ -71,7 +71,6 @@ auto *make_cayley_graph(StringSystem &system, libsemigroups::RWS &rws, int limit
   std::shuffle(std::begin(generators), std::end(generators), g);
 
   do {
-    // take new element, g
     int left = graph.size();
     while(1) {
       bool change = false;
@@ -99,6 +98,7 @@ auto *make_cayley_graph(StringSystem &system, libsemigroups::RWS &rws, int limit
       break;
     }
 
+    // take new element, g
     std::string g = graph.vertices()[graph_ind];
     std::cout << "take '" << g << "'" << std::endl;
 
@@ -122,17 +122,21 @@ auto *make_cayley_graph(StringSystem &system, libsemigroups::RWS &rws, int limit
       auto g_ind = graph_ind;
       auto h_ind = j;
       if(h_ind == graph.size()) {
-        std::cout << "\t-> new vertex '" << n << "'" << std::endl;
+        std::cout << "\t-> new vertex '" << n << "'" << "\t" << graph.size() << std::endl;
         graph.add_vertex(n);
+        --limit;
       } else {
         auto h = h_save;
       }
-      graph.add_edge(g_ind, h_ind);
+      graph.add_edge(g_ind, h_ind, i);
       std::cout << "\t\tconnect: " << g_ind << " to " << h_ind << std::endl;
+      if(limit == 0) {
+        break;
+      }
     }
 
     ++graph_ind;
-  } while(--limit && seen.size() < graph.size());
+  } while(limit && seen.size() < graph.size());
   return graph_ptr;
 }
 
@@ -177,12 +181,16 @@ void write_edges(std::string filename, Graph<std::string> graph) {
     int j = 0;
     bool last_i = (i == graph.edges().size() - 1);
     auto &from = edge.first;
-    for(auto &to : edge.second) {
+    for(auto &end : edge.second) {
+      auto to = end.first;
+      auto gen = end.second;
       bool last_j = (j == edge.second.size() - 1);
       std::string e = " [";
       e += std::to_string(from + 1);
       e += ", ";
       e += std::to_string(to + 1);
+      e += ", ";
+      e += std::to_string(gen);
       e += "]";
       if(!(last_i && last_j)) {
         e += ",";
@@ -238,7 +246,7 @@ int main(int argc, char *argv[]) {
   }
   rws.set_max_rules(800);
   rws.knuth_bendix();
-  auto *g = make_cayley_graph(t, rws, 300);
+  auto *g = make_cayley_graph(t, rws, 600);
   fflush(stdout);
 
   std::string elems = fname, edges = fname;
