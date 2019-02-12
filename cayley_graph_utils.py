@@ -7,7 +7,7 @@ def load_group_elements(filename):
         j = json.load(f)
     for i in range(len(j)):
         j[i] = j[i].strip().replace(' ', '*')
-    print('len(j)', len(j))
+    # print('len(j)', len(j))
     return j
 
 
@@ -17,7 +17,7 @@ def load_group_edges(filename):
     for i in range(len(edges)):
         u, v, g = edges[i]
         edges[i] = [u - 1, v - 1, g]
-        print(u - 1, v - 1)
+        # print(u - 1, v - 1, g)
     return edges
 
 
