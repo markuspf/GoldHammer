@@ -1,0 +1,30 @@
+#!/bin/bash
+
+
+visualize_cg_specific() {
+  i=$1; shift
+  elems="${i/system/elements}"
+  edges="${i/system/edges}"
+  adj="${i/system/adjacency_mat/}"
+  graph="${i/system/graph/}"
+  if ! [ -e "${adj}" ]; then
+    ./make_cayley_graph.py "${elems}" "${edges}"
+  elif ! [ -e "${graph}" ]; then
+    ./make_cayley_graph.py "${elems}" "${edges}"
+  fi
+}
+
+visualize_cg() {
+  maxthreads=4
+  nothreads=0
+  for i in data/cg_system*; do
+    [ $nothreads -eq $maxthreads ] && {
+      wait
+      nothreads=0
+    }
+    visualize_cg_specific "$i"
+  done
+  wait
+}
+
+visualize_cg

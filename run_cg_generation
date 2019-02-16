@@ -1,0 +1,30 @@
+#!/bin/bash
+
+
+generate_cg_specific() {
+  i=$1; shift
+  elems="${i/system/elements}"
+  edges="${i/system/edges}"
+  if ! [ -e "${edges}" ]; then
+    ./cg_generator "${i}"
+  elif ! [ -e "${elems}" ]; then
+    ./cg_generator "${i}"
+  fi
+}
+
+generate_cg() {
+  maxthreads=4
+  nothreads=0
+  for i in data/cg_system*; do
+    [ $nothreads -eq $maxthreads ] && {
+      wait
+      nothreads=0
+    }
+    ((++nothreads))
+    generate_cg_specific "$i" &
+  done
+  wait
+}
+
+
+generate_cg

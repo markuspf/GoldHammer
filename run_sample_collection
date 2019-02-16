@@ -1,66 +1,11 @@
 #!/bin/bash
 
 
-# for i in {1..1}; do
-#   ./ss_generator 2 3 7
-# done
-
 # total permitted number
 n=$1; shift
 [ -z "$n" ] && n=10
 
 mkdir -p data
-
-generate_cg_specific() {
-  i=$1; shift
-  elems="${i/system/elements}"
-  edges="${i/system/edges}"
-  if ! [ -e "${edges}" ]; then
-    ./cg_generator "${i}"
-  elif ! [ -e "${elems}" ]; then
-    ./cg_generator "${i}"
-  fi
-}
-
-visualize_cg_specific() {
-  i=$1; shift
-  elems="${i/system/elements}"
-  edges="${i/system/edges}"
-  adj="${i/system/adjacency_mat/}"
-  graph="${i/system/graph/}"
-  if ! [ -e "${adj}" ]; then
-    ./make_cayley_graph.py "${elems}" "${edges}"
-  elif ! [ -e "${graph}" ]; then
-    ./make_cayley_graph.py "${elems}" "${edges}"
-  fi
-}
-
-generate_cg() {
-  maxthreads=4
-  nothreads=0
-  for i in data/cg_system*; do
-    [ $nothreads -eq $maxthreads ] && {
-      wait
-      nothreads=0
-    }
-    ((++nothreads))
-    generate_cg_specific "$i" &
-  done
-  wait
-}
-
-visualize_cg() {
-  maxthreads=4
-  nothreads=0
-  for i in data/cg_system*; do
-    [ $nothreads -eq $maxthreads ] && {
-      wait
-      nothreads=0
-    }
-    visualize_cg_specific "$i"
-  done
-  wait
-}
 
 for p in 2; do
   for q in 3; do
@@ -69,12 +14,12 @@ for p in 2; do
       for i in data/cg_system_${p}-${q}-${r}*; do
         ((++c))
       done
-      for i in $(seq $c $n); do
+      for i in $(seq $c $((n-1))); do
         ./ss_generator $p $q $r
       done
     done
   done
 done
 
-generate_cg
-visualize_cg
+# ./run_cg_generation
+# ./run_cg_visualization
