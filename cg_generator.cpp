@@ -7,8 +7,6 @@
 #include <algorithm>
 #include <map>
 #include <queue>
-#include <fcntl.h>
-#include <unistd.h>
 
 #include <libsemigroups/src/semigroups.h>
 #include <libsemigroups/src/rws.h>
@@ -209,16 +207,6 @@ void write_edges(std::string filename, Graph<std::string> graph) {
   fprintf(fp, " ]\n");
   fflush(fp);
   fclose(fp);
-}
-
-
-void seed_rng() {
-  int fd=open("/dev/urandom", O_RDONLY);
-  if(fd==-1) abort();
-  unsigned seed,pos = 0;
-  while(pos<sizeof(seed)){int a=read(fd,(char*)&seed+pos,sizeof(seed)-pos);if(a<=0)abort();pos += a;}
-  srand(seed);
-  close(fd);
 }
 
 

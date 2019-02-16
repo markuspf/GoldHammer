@@ -1,8 +1,8 @@
-OPTFLAGS = -Ofast -march=native -mtune=native
-# OPTFLAGS = -g3
+# OPTFLAGS = -Ofast -march=native -mtune=native
+OPTFLAGS = -g3
 CXXFLAGS = $(OPTFLAGS) -std=c++14 -I. -fopt-info
 LDFLAGS =
-OBJECTS = cg_generator ss_generator ss_cat
+OBJECTS = cg_generator ss_generator ss_transform ss_cat
 
 
 all : $(OBJECTS)
@@ -14,6 +14,9 @@ cg_generator: cg_generator.cpp StringSystem.hpp Makefile
 
 ss_generator: ss_generator.cpp StringSystem.hpp Makefile
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) ss_generator.cpp -o $@
+
+ss_transform: ss_transform.cpp StringSystem.hpp Makefile
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) ss_transform.cpp -o $@
 
 ss_cat: ss_cat.cpp StringSystem.hpp Makefile
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) ss_cat.cpp -o $@

@@ -1,3 +1,4 @@
+__pycache__
 .ropeproject
 !requirements.txt
 data/
@@ -8,4 +9,5 @@ nohup.out
 ss_generator
 cg_generator
 ss_cat
+ss_transform
 libsemigroups
