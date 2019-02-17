@@ -2,6 +2,10 @@
 #include <cstdint>
 #include <ctime>
 
+#include <libsemigroups/src/semigroups.h>
+#include <libsemigroups/src/rws.h>
+#include <libsemigroups/src/rwse.h>
+#include <libsemigroups/src/cong.h>
 
 #include <StringSystem.hpp>
 
@@ -13,6 +17,20 @@ StringSystem triangle_group(int p, int q, int r) {
   t.set_order({y}, q);
   t.set_order({x, y}, r);
   return t;
+}
+
+bool is_confluent(StringSystem &ss) {
+  auto cp = ss;
+  libsemigroups::RWS rws;
+  rws.set_report(false);
+  cp.iterate_relators([&](const auto &rel) mutable noexcept -> bool {
+    auto lhs = cp.to_str(rel);
+    rws.add_rule(lhs.c_str(), "");
+    return true;
+  });
+  rws.set_max_rules(400);
+  rws.knuth_bendix();
+  return rws.confluent();
 }
 
 int main(const int argc, char **argv) {
@@ -32,8 +50,11 @@ int main(const int argc, char **argv) {
   }
   std::string filename = fname;
 
-  auto t = triangle_group(p, q, r);
-  t.fp_uglify(ugl);
+  StringSystem t;
+  do {
+    t = triangle_group(p, q, r);
+    t.fp_uglify(ugl);
+  } while(is_confluent(t));
   t.to_file(filename);
   t.print();
 }

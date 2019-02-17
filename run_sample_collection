@@ -1,24 +1,37 @@
 #!/bin/bash
 
-
 # total permitted number
 n=$1; shift
 [ -z "$n" ] && n=10
 
+make -j4
 mkdir -p data
 
-for p in 2; do
-  for q in 3; do
-    for r in 7 8 9; do
-      c=0 # count existing files
-      for i in data/cg_system_${p}-${q}-${r}*; do
-        ((++c))
-      done
-      for i in $(seq $c $((n-1))); do
-        ./ss_generator $p $q $r
+generate_samples() {
+  total_no=$1; shift
+  for p in 2; do
+    for q in 3; do
+      for r in 7 8 9; do
+        c=0 # count existing files
+        for i in data/cg_system_${p}-${q}-${r}*; do
+          ((++c))
+        done
+        for i in $(seq $c $((total_no-1))); do
+          ./ss_generator $p $q $r
+        done
       done
     done
   done
+}
+
+for i in {1..10}; do
+  generate_samples "$n"
+done
+
+for i in data/cg_system*; do
+  output="${i/cg_system/cg_hr}"
+  [ -e "${output}" ] && continue
+  ./ss_cat "${i}" > "$output"
 done
 
 # ./run_cg_generation

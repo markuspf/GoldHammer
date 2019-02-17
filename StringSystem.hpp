@@ -39,7 +39,7 @@ struct StringSystem {
   int no_generators = 0;
   std::vector<word_t> relators;
 
-  StringSystem(size_t n) noexcept:
+  StringSystem(size_t n=0) noexcept:
     relators()
   {
     for(int i = 0; i < n; ++i) {

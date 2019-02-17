@@ -3,53 +3,18 @@
 #include <cctype>
 #include <cstdlib>
 #include <ctime>
+
 #include <random>
 #include <algorithm>
-#include <map>
-#include <queue>
+#include <string>
 
 #include <libsemigroups/src/semigroups.h>
 #include <libsemigroups/src/rws.h>
 #include <libsemigroups/src/rwse.h>
 #include <libsemigroups/src/cong.h>
 
-
+#include <CayleyGraph.hpp>
 #include <StringSystem.hpp>
-
-
-template <typename T>
-struct Graph {
-  std::vector<T> vertices_;
-  std::map<int, std::set<std::pair<int, StringSystem::gen_t>>> edges_;
-
-  Graph():
-    vertices_(), edges_()
-  {}
-
-  bool empty() const noexcept {
-    return size() == 0;
-  }
-
-  size_t size() const noexcept {
-    return vertices_.size();
-  }
-
-  const auto &vertices() const noexcept {
-    return vertices_;
-  }
-
-  const auto &edges() const noexcept {
-    return edges_;
-  }
-
-  void add_vertex(T val) noexcept {
-    vertices_.push_back(val);
-  }
-
-  void add_edge(int i, int j, StringSystem::gen_t g) noexcept {
-    edges_[i].insert(std::pair<decltype(j), decltype(g)>(j, g));
-  }
-};
 
 
 auto *make_cayley_graph(StringSystem &system, libsemigroups::RWS &rws, int limit=300) {
@@ -223,18 +188,18 @@ void replaceAll(std::string &str, const std::string &from, const std::string &to
 int main(int argc, char *argv[]) {
   seed_rng();
   std::string fname = (argc > 1) ? argv[1] : "cg_system.txt";
-  auto t = StringSystem::from_file(fname);
-  t.print();
+  auto ss = StringSystem::from_file(fname);
+  ss.print();
   libsemigroups::RWS rws;
   rws.set_report(true);
-  for(const auto &rel : t.relators) {
-    auto lhs = t.to_str(rel);
+  ss.iterate_relators([&](const auto &rel) mutable noexcept -> bool {
+    auto lhs = ss.to_str(rel);
     rws.add_rule(lhs.c_str(), "");
-    /* std::cout << "ADD RULE " << lhs << std::endl; */
-  }
+    return true;
+  });
   rws.set_max_rules(1000);
   rws.knuth_bendix();
-  auto *g = make_cayley_graph(t, rws, 600);
+  auto *g = make_cayley_graph(ss, rws, 600);
   fflush(stdout);
 
   std::string elems = fname, edges = fname;

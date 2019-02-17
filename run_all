@@ -1,0 +1,5 @@
+#!/bin/bash
+
+./run_sample_collection
+./run_cg_generation
+./run_cg_visualization

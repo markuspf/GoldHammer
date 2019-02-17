@@ -8,12 +8,12 @@ OBJECTS = cg_generator ss_generator ss_transform ss_cat
 all : $(OBJECTS)
 
 
-DEPS = StringSystem.hpp libsemigroups/src/rws.cc libsemigroups/src/rwse.cc libsemigroups/src/report.cc libsemigroups/src/elements.cc
-cg_generator: cg_generator.cpp StringSystem.hpp Makefile
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) cg_generator.cpp $(DEPS) -o $@
+RWS_DEPS = libsemigroups/src/rws.cc libsemigroups/src/rwse.cc libsemigroups/src/report.cc libsemigroups/src/elements.cc
+cg_generator: cg_generator.cpp StringSystem.hpp CayleyGraph.hpp Makefile
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) cg_generator.cpp $(RWS_DEPS) -o $@
 
 ss_generator: ss_generator.cpp StringSystem.hpp Makefile
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) ss_generator.cpp -o $@
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) ss_generator.cpp $(RWS_DEPS) -o $@
 
 ss_transform: ss_transform.cpp StringSystem.hpp Makefile
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) ss_transform.cpp -o $@
