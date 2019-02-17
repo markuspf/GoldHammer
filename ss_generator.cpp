@@ -37,7 +37,7 @@ int main(const int argc, char **argv) {
   seed_rng();
 
   int p = 2, q = 3, r = 7;
-  int ugl = rand() % 7;
+  int ugl = rand() % 10;
   char fname[80];
   uint32_t id = ugl ? uint32_t(rand()) : 0u;
   if(argc >= 4) {

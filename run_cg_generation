@@ -13,7 +13,7 @@ generate_cg_specific() {
 }
 
 generate_cg() {
-  maxthreads=4
+  maxthreads=8
   nothreads=0
   for i in data/cg_system*; do
     [ $nothreads -eq $maxthreads ] && {

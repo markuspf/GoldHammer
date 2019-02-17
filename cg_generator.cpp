@@ -6,6 +6,7 @@
 
 #include <random>
 #include <algorithm>
+#include <chrono>
 #include <string>
 
 #include <libsemigroups/src/semigroups.h>
@@ -17,94 +18,8 @@
 #include <StringSystem.hpp>
 
 
-auto *make_cayley_graph(StringSystem &system, libsemigroups::RWS &rws, int limit=300) {
-  auto *graph_ptr = new Graph<std::string>();
-  auto &graph = *graph_ptr;
-  graph.add_vertex("");
-  std::set<int> seen;
-  using word_t = StringSystem::word_t;
-  size_t graph_ind = 0;
-
-  std::vector<int> generators(system.size());
-  for(int i = 0; i < generators.size(); ++i) {
-      generators[i] = i;
-  }
-  std::random_device rd;
-  std::mt19937 g(rd());
-  std::shuffle(std::begin(generators), std::end(generators), g);
-
-  do {
-    int left = graph.size();
-    while(1) {
-      bool change = false;
-      if(graph_ind >= graph.size()) {
-        graph_ind = 0;
-        --left;
-        change = true;
-      }
-      if(!left) {
-        break;
-      }
-      if(seen.find(graph_ind) != std::end(seen)) {
-        ++graph_ind;
-        --left;
-        change = true;
-      }
-      if(!change || !left) {
-        if(left) {
-          seen.insert(graph_ind);
-        }
-        break;
-      }
-    }
-    if(!left) {
-      break;
-    }
-
-    // take new element, g
-    std::string g = graph.vertices()[graph_ind];
-    std::cout << "take '" << g << "'" << std::endl;
-
-    // try different outcomes from it
-    for(auto i : generators) {
-      auto n = g + system.to_str(system[i]);
-      std::cout << "\tconsider '" << n << "'" << std::endl;
-      // check if the new word is already cached
-      int j = 0;
-      std::string h_save;
-      for(auto h : graph.vertices()) {
-        if(rws.test_equals(n.c_str(), h.c_str())) {
-          h_save = h;
-          std::cout << "\t\texists: '" << n << "' == '" << h << "'" << std::endl;
-          break;
-        }
-        ++j;
-      }
-
-      // is a new element
-      auto g_ind = graph_ind;
-      auto h_ind = j;
-      if(h_ind == graph.size()) {
-        std::cout << "\t-> new vertex '" << n << "'" << "\t" << graph.size() << std::endl;
-        graph.add_vertex(n);
-        --limit;
-      } else {
-        auto h = h_save;
-      }
-      graph.add_edge(g_ind, h_ind, i);
-      std::cout << "\t\tconnect: " << g_ind << " to " << h_ind << std::endl;
-      if(limit == 0) {
-        break;
-      }
-    }
-
-    ++graph_ind;
-  } while(limit && seen.size() < graph.size());
-  return graph_ptr;
-}
-
-
-void write_elements(std::string filename, Graph<std::string> &graph) {
+void write_elements(std::string filename, CayleyGraph &cg) {
+  auto &graph = cg.graph;
   FILE *fp = fopen(filename.c_str(), "w");
   /* FILE *fp = stdout; */
   fprintf(fp, "[");
@@ -134,7 +49,8 @@ void write_elements(std::string filename, Graph<std::string> &graph) {
   fclose(fp);
 }
 
-void write_edges(std::string filename, Graph<std::string> graph) {
+void write_edges(std::string filename, CayleyGraph &cg) {
+  auto &graph = cg.graph;
   FILE *fp = fopen(filename.c_str(), "w");
   /* FILE *fp = stdout; */
   fprintf(fp, "[");
@@ -185,27 +101,58 @@ void replaceAll(std::string &str, const std::string &from, const std::string &to
 	}
 }
 
-int main(int argc, char *argv[]) {
-  seed_rng();
-  std::string fname = (argc > 1) ? argv[1] : "cg_system.txt";
-  auto ss = StringSystem::from_file(fname);
-  ss.print();
+void dry_run_rws(StringSystem &ss, int max_rules) {
   libsemigroups::RWS rws;
-  rws.set_report(true);
+  rws.set_report(false);
   ss.iterate_relators([&](const auto &rel) mutable noexcept -> bool {
     auto lhs = ss.to_str(rel);
     rws.add_rule(lhs.c_str(), "");
     return true;
   });
-  rws.set_max_rules(1000);
+  rws.set_max_rules(max_rules);
   rws.knuth_bendix();
-  auto *g = make_cayley_graph(ss, rws, 600);
-  fflush(stdout);
+}
+
+int find_max_rules_optimal(StringSystem &ss, double max_dur) {
+  int max_rules = 0;
+  volatile double dur = 0.;
+  do {
+    max_rules += std::max<int>(max_rules / 8, 100);
+    const auto start = now();
+    dry_run_rws(ss, max_rules);
+    const auto stop = now();
+    dur = diff(start, stop);
+    printf("rws: max_rules=%d dur=%.2f\n", max_rules, dur);
+  } while(dur < max_dur);
+  printf("rws: optimal max_rules=%d dur=%.2f\n", max_rules, dur);
+  return max_rules;
+}
+
+int main(int argc, char *argv[]) {
+  seed_rng();
+  std::string fname = (argc > 1) ? argv[1] : "cg_system.txt";
+  auto ss = StringSystem::from_file(fname);
+  ss.print();
+
+  int max_rules = find_max_rules_optimal(ss, 5.);
+  libsemigroups::RWS rws;
+  rws.set_report(false);
+  ss.iterate_relators([&](const auto &rel) mutable noexcept -> bool {
+    auto lhs = ss.to_str(rel);
+    rws.add_rule(lhs.c_str(), "");
+    return true;
+  });
+  rws.set_max_rules(max_rules);
+  rws.knuth_bendix();
+  printf("rws: completed\n");
+
+  // memoize a part of cayley graph
+  auto cg = CayleyGraph(ss, rws);
+  cg.traverse(600, 120.);
 
   std::string elems = fname, edges = fname;
 	replaceAll(elems, "cg_system", "cg_elements");
 	replaceAll(edges, "cg_system", "cg_edges");
-  write_elements(elems, *g);
-  write_edges(edges, *g);
-  delete g;
+  write_elements(elems, cg);
+  write_edges(edges, cg);
 }
