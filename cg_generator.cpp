@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
     rws.add_rule(lhs.c_str(), "");
     /* std::cout << "ADD RULE " << lhs << std::endl; */
   }
-  rws.set_max_rules(800);
+  rws.set_max_rules(1000);
   rws.knuth_bendix();
   auto *g = make_cayley_graph(t, rws, 600);
   fflush(stdout);

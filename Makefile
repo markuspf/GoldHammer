@@ -1,5 +1,5 @@
-# OPTFLAGS = -Ofast -march=native -mtune=native
-OPTFLAGS = -g3
+OPTFLAGS = -Ofast -march=native -mtune=native
+# OPTFLAGS = -g3
 CXXFLAGS = $(OPTFLAGS) -std=c++14 -I. -fopt-info
 LDFLAGS =
 OBJECTS = cg_generator ss_generator ss_transform ss_cat

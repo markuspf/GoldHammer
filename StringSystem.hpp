@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <set>
 
 
 #include <fcntl.h>
@@ -95,8 +96,8 @@ struct StringSystem {
   }
 
   void remove_generator(gen_t g, const word_t &replacement) noexcept {
-    std::cout << "REMOVE GENERATOR" << std::endl;
-    print();
+    /* std::cout << "REMOVE GENERATOR" << std::endl; */
+    /* print(); */
     if(g < 0)g = inverse(g);
     auto G = inverse(g);
     remove_simple_relators(operator[](size() - 1));
@@ -197,6 +198,7 @@ struct StringSystem {
     gen_t g = add_generator();
     word_t inv = {inverse(g)};
     relators.push_back(multiply(inv, w));
+    sort_relators();
   }
 
   void fp_uglify_add_generator() noexcept {
@@ -207,19 +209,19 @@ struct StringSystem {
     do { t = random_gen(); } while(t == g);
 
     StringSystem ss = *this;
-    bool has_empty_relator = false;
+    bool check_failed = false;
     do {
-      if(has_empty_relator) {
+      if(check_failed) {
         *this = ss;
       }
       // make a word
       word_t w;
       do {
-        w = random_word();
+        w = random_word(4);
         replace_word(w, {t}, {});
         replace_word(w, {inverse(t)}, {});
         simplify_word(w);
-      } while(w.size() < 2 || std::find(std::begin(w), std::end(w), g) == std::end(w));
+      } while(w.size() < 3 || std::find(std::begin(w), std::end(w), g) == std::end(w));
       // set the equation
       /* auto st = SSTransformator(*this); */
       /* SSTransformator::SSEquation eqn(st); */
@@ -228,12 +230,15 @@ struct StringSystem {
       /* std::cout << eqn.to_str() << std::endl; */
       remove_generator(t, w);
 
-      has_empty_relator = false;
+      check_failed = false;
       iterate_relators([&](auto &rel) mutable noexcept -> bool {
-        has_empty_relator = rel.empty();
-        return !has_empty_relator;
+        if(rel.empty() || rel.size() > 150) {
+          check_failed = true;
+          return false;
+        }
+        return !check_failed;
       });
-    } while(has_empty_relator);
+    } while(check_failed);
   }
 
   std::string to_str(gen_t gen) const {
@@ -366,19 +371,23 @@ struct StringSystem {
   void word_erase(word_t &w, size_t ind) { w.erase(std::begin(w) + ind); }
   gen_t random_gen() { return (*this)[rand() % size()]; }
 
+  std::set<word_t> used_words;
   word_t random_word(int len=-1) {
     if(len == -1)len = rand() % 15;
     word_t w;
     do {
-      for(int i = 0; i < len; ++i) {
-        gen_t g = (*this)[rand() % size()];
-        if(rand() & 1) {
-          g = inverse(g);
-        }
-        w.push_back(g);
-        simplify_word(w);
-      }
-    } while(w.size() < len);
+        do {
+          for(int i = 0; i < len; ++i) {
+            gen_t g = (*this)[rand() % size()];
+            if(rand() & 1) {
+              g = inverse(g);
+            }
+            w.push_back(g);
+            simplify_word(w);
+          }
+        } while(w.size() < len);
+    } while(used_words.count(w));
+    used_words.insert(w);
     return w;
   }
 

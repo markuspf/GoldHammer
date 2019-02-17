@@ -5,6 +5,10 @@ visualize_cg_specific() {
   i=$1; shift
   elems="${i/system/elements}"
   edges="${i/system/edges}"
+
+  ! [ -e "${elems}" ] && return
+  ! [ -e "${edges}" ] && return
+
   adj="${i/system/adjacency_mat/}"
   graph="${i/system/graph/}"
   if ! [ -e "${adj}" ]; then
