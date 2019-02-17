@@ -13,7 +13,7 @@ generate_cg_specific() {
 }
 
 generate_cg() {
-  maxthreads=8
+  maxthreads=4
   nothreads=0
   for i in data/cg_system*; do
     [ $nothreads -eq $maxthreads ] && {
@@ -24,6 +24,7 @@ generate_cg() {
     generate_cg_specific "$i" &
   done
   wait
+  no_threads=0
 }
 
 

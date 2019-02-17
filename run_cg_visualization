@@ -29,6 +29,7 @@ visualize_cg() {
     visualize_cg_specific "$i"
   done
   wait
+  no_threads=0
 }
 
 visualize_cg

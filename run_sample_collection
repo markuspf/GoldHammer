@@ -16,9 +16,19 @@ generate_samples() {
         for i in data/cg_system_${p}-${q}-${r}*; do
           ((++c))
         done
+
+        maxthreads=4
+        no_threads=0
         for i in $(seq $c $((total_no-1))); do
-          ./ss_generator $p $q $r
+          [ "$no_threads" -ge "$max_threads" ] && {
+            wait
+            no_threads=0
+          }
+          ./ss_generator $p $q $r &
+          ((++no_threads))
         done
+        wait
+        no_threads=0
       done
     done
   done
