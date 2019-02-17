@@ -101,8 +101,7 @@ void replaceAll(std::string &str, const std::string &from, const std::string &to
 	}
 }
 
-void dry_run_rws(StringSystem &ss, int max_rules) {
-  libsemigroups::RWS rws;
+void rws_run_knuth_bendix(StringSystem &ss, libsemigroups::RWS &rws, int max_rules) {
   rws.set_report(false);
   ss.iterate_relators([&](const auto &rel) mutable noexcept -> bool {
     auto lhs = ss.to_str(rel);
@@ -114,12 +113,15 @@ void dry_run_rws(StringSystem &ss, int max_rules) {
 }
 
 int find_max_rules_optimal(StringSystem &ss, double max_dur) {
-  int max_rules = 0;
+  int max_rules = 300;
   volatile double dur = 0.;
   do {
     max_rules += std::max<int>(max_rules / 8, 100);
     const auto start = now();
-    dry_run_rws(ss, max_rules);
+    {
+      libsemigroups::RWS rws;
+      rws_run_knuth_bendix(ss, rws, max_rules);
+    }
     const auto stop = now();
     dur = diff(start, stop);
     printf("rws: max_rules=%d dur=%.2f\n", max_rules, dur);
@@ -136,14 +138,7 @@ int main(int argc, char *argv[]) {
 
   int max_rules = find_max_rules_optimal(ss, 5.);
   libsemigroups::RWS rws;
-  rws.set_report(false);
-  ss.iterate_relators([&](const auto &rel) mutable noexcept -> bool {
-    auto lhs = ss.to_str(rel);
-    rws.add_rule(lhs.c_str(), "");
-    return true;
-  });
-  rws.set_max_rules(max_rules);
-  rws.knuth_bendix();
+  rws_run_knuth_bendix(ss, rws, max_rules);
   printf("rws: completed\n");
 
   // memoize a part of cayley graph
