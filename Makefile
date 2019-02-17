@@ -9,10 +9,10 @@ all : $(OBJECTS)
 
 
 RWS_DEPS = libsemigroups/src/rws.cc libsemigroups/src/rwse.cc libsemigroups/src/report.cc libsemigroups/src/elements.cc
-cg_generator: cg_generator.cpp StringSystem.hpp CayleyGraph.hpp Makefile
+cg_generator: cg_generator.cpp StringSystem.hpp CayleyGraph.hpp RWS.hpp Makefile
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) cg_generator.cpp $(RWS_DEPS) -o $@
 
-ss_generator: ss_generator.cpp StringSystem.hpp Makefile
+ss_generator: ss_generator.cpp StringSystem.hpp RWS.hpp Makefile
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) ss_generator.cpp $(RWS_DEPS) -o $@
 
 ss_transform: ss_transform.cpp StringSystem.hpp Makefile

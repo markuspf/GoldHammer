@@ -268,7 +268,15 @@ struct StringSystem {
       /*   s += "*"; */
       /* } */
     }
+    while(s[s.length() - 1] == ' ')s.pop_back();
     return s;
+  }
+
+  int str_word_len(const std::string &s_w) {
+    if(size() > 26) {
+      return std::count(s_w.begin(), s_w.end(), ' ') + 1;
+    }
+    return s_w.length();
   }
 
   void print() {

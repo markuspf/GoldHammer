@@ -2,11 +2,8 @@
 #include <cstdint>
 #include <ctime>
 
-#include <libsemigroups/src/semigroups.h>
-#include <libsemigroups/src/rws.h>
-#include <libsemigroups/src/rwse.h>
-#include <libsemigroups/src/cong.h>
-
+#include <RWS.hpp>
+#include <CayleyGraph.hpp>
 #include <StringSystem.hpp>
 
 
@@ -19,8 +16,10 @@ StringSystem triangle_group(int p, int q, int r) {
   return t;
 }
 
-bool is_confluent(StringSystem &ss) {
+bool is_sufficient(StringSystem &ss) {
   auto cp = ss;
+  int max_rules = find_max_rules_optimal(ss, 3.);
+  if(max_rules == -1)return false;
   libsemigroups::RWS rws;
   rws.set_report(false);
   cp.iterate_relators([&](const auto &rel) mutable noexcept -> bool {
@@ -28,9 +27,27 @@ bool is_confluent(StringSystem &ss) {
     rws.add_rule(lhs.c_str(), "");
     return true;
   });
-  rws.set_max_rules(400);
+  rws.set_max_rules(max_rules);
   rws.knuth_bendix();
-  return rws.confluent();
+
+  // check system is confluent
+  if(rws.confluent()) {
+    printf("verdict: confluent\n");
+    return false;
+  }
+
+  // check that the sample of cayley graph is not a tree
+  for(auto graph_size : {50, 200, 600, 1200, 1800, 3000}) {
+    CayleyGraph cg(ss, rws);
+    cg.traverse(graph_size, 10., 3);
+    // not a tree
+    if(double(cg.graph.size()) * 1.05 < double(cg.graph.no_edges())) {
+      return true;
+    }
+    printf("nodes %lu, edges %lu\n", cg.graph.size(), cg.graph.no_edges());
+  }
+  printf("verdict: is a tree\n");
+  return false;
 }
 
 int main(const int argc, char **argv) {
@@ -54,7 +71,7 @@ int main(const int argc, char **argv) {
   do {
     t = triangle_group(p, q, r);
     t.fp_uglify(ugl);
-  } while(is_confluent(t));
+  } while(!is_sufficient(t));
   t.to_file(filename);
   t.print();
 }

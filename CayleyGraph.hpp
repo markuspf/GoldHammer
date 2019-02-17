@@ -7,22 +7,15 @@
 #include <string>
 #include <set>
 
-#include <libsemigroups/src/semigroups.h>
-#include <libsemigroups/src/rws.h>
-#include <libsemigroups/src/rwse.h>
-#include <libsemigroups/src/cong.h>
-
+#include <RWS.hpp>
 #include <StringSystem.hpp>
-
-
-auto now() { return std::chrono::system_clock::now(); }
-template <typename T> double diff(T &a, T &b) { return 1e-9 * std::chrono::duration_cast<std::chrono::nanoseconds>(b - a).count(); }
 
 
 template <typename T>
 struct Graph {
   std::vector<T> vertices_;
   std::map<int, std::map<int, StringSystem::gen_t>> edges_;
+  size_t no_edges_ = 0;
 
   Graph():
     vertices_(), edges_()
@@ -34,6 +27,10 @@ struct Graph {
 
   size_t size() const noexcept {
     return vertices_.size();
+  }
+
+  size_t no_edges() const noexcept {
+    return no_edges_;
   }
 
   const auto &vertices() noexcept {
@@ -54,6 +51,7 @@ struct Graph {
 
   void add_edge(int i, int j, StringSystem::gen_t g) noexcept {
     edges_[i][j] = g;
+    ++no_edges_;
   }
 };
 
@@ -96,7 +94,7 @@ struct CayleyGraph {
         graph.add_vertex(n);
       }
 
-      graph[ind][h_ind] = gen;
+      graph.add_edge(ind, h_ind, gen);
     }
 
     visited.insert(ind);
@@ -112,7 +110,7 @@ struct CayleyGraph {
       auto dur = diff(start, stop);
 
       // minimum depth not reached, top priority
-      if(graph.vertices()[graph.size() - 1].length() < min_depth)continue;
+      if(ss.str_word_len(graph.vertices()[graph.size() - 1]) < min_depth)continue;
 
       // max graph size reached, retreat
       if(graph.size() > limit)break;
