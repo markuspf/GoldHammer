@@ -107,12 +107,18 @@ int main(int argc, char *argv[]) {
   printf("rws: completed\n");
 
   // memoize a part of cayley graph
-  auto cg = CayleyGraph(ss, rws);
-  cg.traverse(600, 120.);
-
-  std::string elems = fname, edges = fname;
-	replaceAll(elems, "cg_system", "cg_elements");
-	replaceAll(edges, "cg_system", "cg_edges");
-  write_elements(elems, cg);
-  write_edges(edges, cg);
+  for(auto graph_size : {600, 1200, 1800, 3000}) {
+    auto cg = CayleyGraph(ss, rws);
+    cg.traverse(graph_size, 120.);
+    printf("nodes %lu, edges %lu\n", cg.graph.size(), cg.graph.no_edges());
+    if(double(cg.graph.size()) * 1.05 > double(cg.graph.no_edges())) {
+      continue;
+    }
+    std::string elems = fname, edges = fname;
+    replaceAll(elems, "cg_system", "cg_elements");
+    replaceAll(edges, "cg_system", "cg_edges");
+    write_elements(elems, cg);
+    write_edges(edges, cg);
+    break;
+  }
 }
