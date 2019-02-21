@@ -9,11 +9,37 @@ mkdir -p data
 
 generate_samples() {
   total_no=$1; shift
+
+  # pq groups
+  for p in 2; do
+    for q in 3; do
+      c=0
+      for i in data/cg_system_p-${p}-${q}*; do
+        ((++c))
+      done
+
+      maxthreads=4
+      no_threads=0
+      for i in $(seq $c $((total_no-1))); do
+        [ "$no_threads" -ge "$max_threads" ] && {
+          wait
+          no_threads=0
+        }
+        ./ss_generator p $p $q &
+        ((++no_threads))
+      done
+      wait
+      no_threads=0
+    done
+    wait
+  done
+
+  # triangle groups
   for p in 2; do
     for q in 3; do
       for r in 7 8 9; do
-        c=0 # count existing files
-        for i in data/cg_system_${p}-${q}-${r}*; do
+        c=0
+        for i in data/cg_system_t-${p}-${q}-${r}*; do
           ((++c))
         done
 
@@ -24,11 +50,63 @@ generate_samples() {
             wait
             no_threads=0
           }
-          ./ss_generator $p $q $r &
+          ./ss_generator t $p $q $r &
           ((++no_threads))
         done
         wait
         no_threads=0
+      done
+    done
+  done
+
+  # pqr-groups
+  for p in 2; do
+    for q in 3; do
+      for r in 7 8 9; do
+        c=0
+        for i in data/cg_system_r-${p}-${q}-${r}*; do
+          ((++c))
+        done
+
+        maxthreads=4
+        no_threads=0
+        for i in $(seq $c $((total_no-1))); do
+          [ "$no_threads" -ge "$max_threads" ] && {
+            wait
+            no_threads=0
+          }
+          ./ss_generator r $p $q $r &
+          ((++no_threads))
+        done
+        wait
+        no_threads=0
+      done
+    done
+  done
+
+  # pqrs-groups
+  for p in 2; do
+    for q in 2 3; do
+      for r in 3 4; do
+        for s in 7 8 9; do
+          c=0
+          for i in data/cg_system_s-${p}-${q}-${r}-${s}*; do
+            ((++c))
+          done
+
+          maxthreads=4
+          no_threads=0
+          for i in $(seq $c $((total_no-1))); do
+            [ "$no_threads" -ge "$max_threads" ] && {
+              wait
+              no_threads=0
+            }
+            ./ss_generator s $p $q $r $s &
+            ((++no_threads))
+          done
+          wait
+          no_threads=0
+        done
       done
     done
   done

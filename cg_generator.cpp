@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
     auto cg = CayleyGraph(ss, rws);
     cg.traverse(graph_size, 120.);
     printf("nodes %lu, edges %lu\n", cg.graph.size(), cg.graph.no_edges());
-    if(double(cg.graph.size()) * 1.15 > double(cg.graph.no_edges())) {
+    if(double(cg.graph.size()) * 1.10 > double(cg.graph.no_edges())) {
       continue;
     }
     std::string elems = fname, edges = fname;

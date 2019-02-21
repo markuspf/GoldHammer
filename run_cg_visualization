@@ -32,4 +32,6 @@ visualize_cg() {
   no_threads=0
 }
 
-visualize_cg
+for i in {1..100}; do
+  visualize_cg
+done
