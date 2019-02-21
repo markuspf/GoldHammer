@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <set>
+#include <algorithm>
 
 #include <RWS.hpp>
 #include <StringSystem.hpp>
@@ -14,44 +15,63 @@
 template <typename T>
 struct Graph {
   std::vector<T> vertices_;
-  std::map<int, std::map<int, StringSystem::gen_t>> edges_;
+  std::vector<std::map<int, StringSystem::gen_t>> edges_;
   size_t no_edges_ = 0;
 
   Graph():
     vertices_(), edges_()
   {}
 
-  bool empty() const noexcept {
+  inline bool empty() const noexcept {
     return size() == 0;
   }
 
-  size_t size() const noexcept {
+  inline size_t size() const noexcept {
     return vertices_.size();
   }
 
-  size_t no_edges() const noexcept {
+  inline size_t no_edges() const noexcept {
     return no_edges_;
   }
 
-  const auto &vertices() noexcept {
+  inline const auto &vertices() noexcept {
     return vertices_;
   }
 
-  const auto &edges() noexcept {
+  inline const auto &edges() noexcept {
     return edges_;
   }
 
-  auto &operator[](int key) noexcept {
+  inline auto &operator[](int key) noexcept {
+    while(edges().size() <= key) {
+      edges_.push_back({});
+    }
     return edges_[key];
   }
 
-  void add_vertex(T val=T()) noexcept {
+  inline void add_vertex(T val=T()) noexcept {
     vertices_.push_back(val);
   }
 
-  void add_edge(int i, int j, StringSystem::gen_t g) noexcept {
-    edges_[i][j] = g;
+  inline void add_edge(int i, int j, StringSystem::gen_t g) noexcept {
+    (*this)[i][j] = g;
     ++no_edges_;
+  }
+
+  constexpr inline bool has_edge(int i, int j) {
+    return (*this)[i].count(j) > 0;
+  }
+
+  void to_file_adj(const char *filename) {
+    FILE *fp = fopen(filename, "w");
+    int N = size();
+    for(int i = 0; i < N; ++i) {
+      for(int j = 0; j < N; ++j) {
+        fprintf(fp, "%d", (i == j || has_edge(i, j)) ? 1 : 0);
+      }
+      fprintf(fp, "\n");
+    }
+    fclose(fp);
   }
 };
 

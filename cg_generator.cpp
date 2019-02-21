@@ -50,14 +50,14 @@ void write_edges(std::string filename, CayleyGraph &cg) {
   fprintf(fp, "[");
   int line = 1;
   int i = 0;
-  for(auto &edge : graph.edges()) {
+  for(auto &edge_to : graph.edges()) {
     int j = 0;
     bool last_i = (i == graph.edges().size() - 1);
-    auto &from = edge.first;
-    for(auto &end : edge.second) {
+    auto &from = i;
+    for(auto &end : edge_to) {
       auto to = end.first;
       auto gen = end.second;
-      bool last_j = (j == edge.second.size() - 1);
+      bool last_j = (j == edge_to.size() - 1);
       std::string e = " [";
       e += std::to_string(from + 1);
       e += ", ";
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
     auto cg = CayleyGraph(ss, rws);
     cg.traverse(graph_size, 120.);
     printf("nodes %lu, edges %lu\n", cg.graph.size(), cg.graph.no_edges());
-    if(double(cg.graph.size()) * 1.05 > double(cg.graph.no_edges())) {
+    if(double(cg.graph.size()) * 1.15 > double(cg.graph.no_edges())) {
       continue;
     }
     std::string elems = fname, edges = fname;
@@ -119,6 +119,9 @@ int main(int argc, char *argv[]) {
     replaceAll(edges, "cg_system", "cg_edges");
     write_elements(elems, cg);
     write_edges(edges, cg);
+    std::string adj = fname;
+    replaceAll(adj, "cg_system", "cg_adjbitmap");
+    cg.graph.to_file_adj(adj.c_str());
     break;
   }
 }

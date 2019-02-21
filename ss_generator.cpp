@@ -41,7 +41,7 @@ bool is_sufficient(StringSystem &ss) {
     CayleyGraph cg(ss, rws);
     cg.traverse(graph_size, 10., 3);
     // not a tree
-    if(double(cg.graph.size()) * 1.05 < double(cg.graph.no_edges())) {
+    if(double(cg.graph.size()) * 1.15 < double(cg.graph.no_edges())) {
       return true;
     }
     printf("nodes %lu, edges %lu\n", cg.graph.size(), cg.graph.no_edges());
