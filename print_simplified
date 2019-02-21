@@ -1,0 +1,20 @@
+#!/bin/bash
+
+[ -z "$GAP" ] && {
+  echo "error: GAP variable is not set."
+  exit 1
+}
+! [ -f "$GAP" ] && {
+  echo "error: not a valid GAP path"
+  exit 1
+}
+
+system=$1; shift
+make ss_cat
+TEMPFILE="tmp$RANDOM.g"
+./ss_cat "$system" | ./gap_simplify_group.pl > "$TEMPFILE"
+echo '================================================'
+cat "$TEMPFILE"
+echo '================================================'
+"$GAP" --quitonbreak "$TEMPFILE" <<< ""
+rm -vf "$TEMPFILE"
