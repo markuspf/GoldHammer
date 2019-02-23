@@ -212,7 +212,7 @@ struct StringSystem {
     bool check_failed = false;
     do {
       if(check_failed) {
-        *this = ss;
+        (*this) = ss;
       }
       // make a word
       word_t w;
@@ -386,7 +386,7 @@ struct StringSystem {
     do {
         do {
           for(int i = 0; i < len; ++i) {
-            gen_t g = (*this)[rand() % size()];
+            gen_t g = random_gen();
             if(rand() & 1) {
               g = inverse(g);
             }

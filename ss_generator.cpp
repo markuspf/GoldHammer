@@ -115,7 +115,7 @@ int main(const int argc, char **argv) {
       case TRIANGLE: sprintf(grp_args, "t-%d-%d-%d", p, q, r);break;
       case PQ_GROUP: sprintf(grp_args, "p-%d-%d", p, q);break;
       case PQR_GROUP: sprintf(grp_args, "r-%d-%d-%d", p, q, r);break;
-      case PQRS_GROUP: sprintf(grp_args, "r-%d-%d-%d-%d", p, q, r, s);break;
+      case PQRS_GROUP: sprintf(grp_args, "s-%d-%d-%d-%d", p, q, r, s);break;
     }
     sprintf(fname, "data/cg_system_%s_%d_%s.txt", grp_args, ugl, std::to_string(id).c_str());
   }

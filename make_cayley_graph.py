@@ -13,32 +13,22 @@ from subprocess import call
 from cayley_graph_utils import *
 
 
-def format_ltx(s):
-    r = s.replace('x**-1', 'x') \
-         .replace("y**-1", "y^2") \
-         .replace('<identity>', '1') \
-         .replace('*', '') \
-         .replace('Y', 'y^2')
-    # print(s, '->', r)
-    return r
-
-
-def make_latex_element(g):
-    s = ''
-    p, last = 0, None
-    for sym in g + '_':
-        if sym != last:
-            if last != None:
-                s += last + '^{' + str(p) + '}'
-                p = 0
-            last = sym.lower()
-        if sym.islower():
-            p += 1
-        else:
-            p -= 1
-    if s == '':
-        s = '1'
-    return '${' + s + '}$'
+# def make_latex_element(g):
+#     s = ''
+#     p, last = 0, None
+#     for sym in g + '_':
+#         if sym != last:
+#             if last != None:
+#                 s += last + '^{' + str(p) + '}'
+#                 p = 0
+#             last = sym.lower()
+#         if sym.islower():
+#             p += 1
+#         else:
+#             p -= 1
+#     if s == '':
+#         s = '1'
+#     return '${' + s + '}$'
 
 
 def plot_digraph(gdata, title, fname, format_f=lambda s: str(s)):
@@ -117,112 +107,6 @@ def plot_adjacency_matrix(gdata, fname='adjacency_mat.png'):
     os.remove(svg_fname)
 
 
-def parse_element_rec(s):
-    # s -> xp | yp | | s*s | (s)p
-    # p -> ^n | _
-    t = s.replace('*', '')
-    parsed = ''
-
-    def parse_digit(start_ind):
-        digits = ''
-        for d in range(start_ind, len(t)):
-            d = t[d]
-            if d in '-0123456789':
-                # print('consider', d)
-                digits += d
-            else:
-                break
-        # print("digits", digits)
-        return digits
-
-    i = 0
-    while i < len(t):
-        if t[i] in ['x', 'y']:
-            if i == len(t) - 1:
-                parsed += t[i]
-                break
-            elif t[i + 1] == '^':
-                digits = parse_digit(i + 2)
-                n = int(digits)
-                if n < 0:
-                    parsed += t[i].upper()
-                else:
-                    parsed += t[i] * n
-                i = i + 2 + len(digits)
-            else:
-                parsed += t[i]
-                i += 1
-        elif t[i] == '(':
-            k = 1
-            for j in range(i + 1, len(t)):
-                if t[j] == '(':
-                    k += 1
-                elif t[j] == ')':
-                    k -= 1
-                if k == 0:
-                    k = j
-                    break
-            p = parse_element_rec(t[i+1:k])
-            j, i = k, k + 1
-            if i == len(t):
-                parsed += p
-                break
-            elif t[i] == '^':
-                # print('next', t[i:])
-                digits = parse_digit(i + 1)
-                n = int(digits)
-                if n < 0:
-                    p_rev = p[::-1]
-                    for b in range(len(p_rev)):
-                        if p_rev[b].is_lower():
-                            p_rev[b] = p_rev[b].upper()
-                        else:
-                            p_rev[b] = p_rev[b].lower()
-                    parsed += p_rev
-                    parsed += t[j:k+1] + '^' + str(n)
-                else:
-                    parsed += p * n
-                i += 1 + len(digits)
-        else:
-            i += 1
-    # print(s.replace('*', ''), '->', parsed)
-    return parsed
-
-
-def reduce_element(t, s):
-    ss = ''
-    p, q, r = t
-    while ss != s:
-        ss = s
-        s = s.replace('X', 'x' * (p - 1))
-        s = s.replace('Y', 'y' * (q - 1))
-        s = s.replace('x' * p, '')
-        s = s.replace('y' * q, '')
-        s = s.replace('xy' * r, '')
-        s = s.replace('yyx' * r, 'xy')
-        for i in range(1, (r // 2) + (r & 1) + 1):
-            s = s.replace('yyx' * (r - i), 'xy' * i)
-#        s = s.replace('yyx' * 6, 'xy' * 1)
-#        s = s.replace('yyx' * 5, 'xy' * 2)
-#        s = s.replace('yyx' * 4, 'xy' * 3)
-#        s = s.replace('yyx' * 3, 'xy' * 4)
-        # s = s.replace('yyx'*2, 'xy'*5)
-        # s = s.replace('yyx'*1, 'xy'*7)
-    return s
-
-
-def parse_element(t, s):
-    if s == '<identity ...>':
-        return ''
-    return reduce_element(t, parse_element_rec(s))
-
-
-def element_ltx(s):
-    s = s.replace('^-1', '^{-1}')
-    s = s.replace('*', '')
-    return s
-
-
 if __name__ == "__main__":
     plt.switch_backend('agg')
     felems, fedges = 'cg_elements.txt', 'cg_edges.txt'
@@ -233,6 +117,6 @@ if __name__ == "__main__":
     g, data = make_graph_from_elements(elems, edges)
     for e in edges:
         print(elems[e[0]], '\t->\t', elems[e[1]])
-    if len(g.nodes()) < 1000:
+    if len(g.nodes()) < 1500:
         plot_digraph((g, data), 'cg_graph', fedges.replace('cg_edges', 'cg_graph').replace('.txt', '.png'))
     plot_adjacency_matrix((g, data), fedges.replace('cg_edges', 'cg_adjacency').replace('.txt', '.png'))
