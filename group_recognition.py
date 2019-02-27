@@ -120,7 +120,7 @@ def has_cycle_of_length(cg, length, maxw=-1, word=[]):
     nodes = list(graph.nodes())
     for i in range(maxw):
         wlen = i + 1
-        print('%s-cycle of word length' % length, wlen)
+        # print('%s-cycle of word length' % length, wlen)
         if wlen * length > len(cg.graph.nodes()):
             break
         elif check_words_of_length(cg, length, wlen):
@@ -161,7 +161,7 @@ def process(gdata, y_true):
     # results = find_cycles(cg)
     def path_function(path):
         global divs
-        print('path', path)
+        # print('path', path)
         trans = make_trans_from_path(cg, path)
         cur_div = len(trans)
         for d in sympy.divisors(len(trans))[::-1]:
@@ -176,48 +176,38 @@ def process(gdata, y_true):
 
 if __name__ == '__main__':
     # plt.switch_backend('agg')
-    dir = './data'
-    for filename in os.listdir(dir):
-        filename = dir + '/' + filename
-        # dataset = {}
-        if 'cg_edges' in filename and int(os.path.basename(filename).split('_')[3]) in range(7):
-            # adj_filename = filename.replace('edges', 'adjacency').replace('.txt', '.png')
-            # print(adj_filename)
-            # if os.path.isfile(adj_filename):
-            #     img = load_image(adj_filename)
-            #     img = skimage.img_as_ubyte(img)
-            #     print(img)
-            # pass
+    filename = sys.argv[1]
+    p, q, r = os.path.basename(filename).split('_')[2].split('-')
+    p, q, r = int(p), int(q), int(r)
+    print(filename, p, q, r)
+    felems = filename.replace('system', 'elements')
+    fedges = filename.replace('system', 'edges')
+    elems = load_group_elements(felems)
+    edges = load_group_edges(fedges)
+    graph, gens = make_graph_from_elements(elems, edges)
+    process((graph, gens), (p, q, r))
+    # sys.exit(0)
 
-            p, q, r = os.path.basename(filename).split('_')[2].split('-')
-            p, q, r = int(p), int(q), int(r)
-            print(filename, p, q, r)
-            elems = load_group_elements(filename.replace('edges', 'elements'))
-            edges = load_group_edges(filename)
-            graph, gens = make_graph_from_elements(elems, edges)
-            process((graph, gens), (p, q, r))
-            # sys.exit(0)
+    # labels = []
+    # def label_to_int(label):
+    #     global labels
+    #     if label in labels:
+    #         return labels.index(label)
+    #     # 0 for no edge
+    #     labels += [label]
+    #     return len(labels)
+    # sample = min(50, len(gens))
+    # matrix = [
+    #     [label_to_int(gens[i][j]) if (i in gens and j in gens[i]) else 0 for j in range(sample)]
+    #     for i in range(sample)
+    # ]
+    # vector = []
+    # for m in matrix:
+    #     vector += m
+    # data = np.array(vector)
 
-            # labels = []
-            # def label_to_int(label):
-            #     global labels
-            #     if label in labels:
-            #         return labels.index(label)
-            #     # 0 for no edge
-            #     labels += [label]
-            #     return len(labels)
-            # sample = min(50, len(gens))
-            # matrix = [
-            #     [label_to_int(gens[i][j]) if (i in gens and j in gens[i]) else 0 for j in range(sample)]
-            #     for i in range(sample)
-            # ]
-            # vector = []
-            # for m in matrix:
-            #     vector += m
-            # data = np.array(vector)
-
-            # y_true = get_true_result(filename)
-            # if y_true not in dataset:
-            #     dataset[y_true] = []
-            # dataset[y_true] += [data]
-            # print(data)
+    # y_true = get_true_result(filename)
+    # if y_true not in dataset:
+    #     dataset[y_true] = []
+    # dataset[y_true] += [data]
+    # print(data)

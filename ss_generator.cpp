@@ -43,7 +43,7 @@ StringSystem pqrs_group(int p, int q, int r, int s) {
   return G;
 }
 
-bool is_sufficient(StringSystem &ss) {
+bool is_sufficient(StringSystem &ss, float ratio=1.1) {
   auto cp = ss;
   int max_rules = find_max_rules_optimal(ss, 3.);
   if(max_rules == -1)return false;
@@ -68,7 +68,7 @@ bool is_sufficient(StringSystem &ss) {
     CayleyGraph cg(ss, rws);
     cg.traverse(graph_size, 10., 3);
     // not a tree
-    if(double(cg.graph.size()) * 1.10 < double(cg.graph.no_edges())) {
+    if(double(cg.graph.size()) * ratio < double(cg.graph.no_edges())) {
       return true;
     }
     printf("nodes %lu, edges %lu\n", cg.graph.size(), cg.graph.no_edges());
@@ -122,15 +122,18 @@ int main(const int argc, char **argv) {
   std::string filename = fname;
 
   StringSystem t;
+  float rat=1.05;
+  if(grp==TRIANGLE)rat=1.15;
+  if(grp==PQRS_GROUP)rat=1.1;
   do {
     switch(grp) {
-      case TRIANGLE: t = triangle_group(p, q, r); break;
-      case PQ_GROUP: t = pq_group(p, q); break;
-      case PQR_GROUP: t = pqr_group(p, q, r); break;
-      case PQRS_GROUP: t = pqrs_group(p, q, r, s); break;
+      case TRIANGLE:t=triangle_group(p, q, r); break;
+      case PQ_GROUP:t=pq_group(p, q); break;
+      case PQR_GROUP:t=pqr_group(p, q, r); break;
+      case PQRS_GROUP:t=pqrs_group(p, q, r, s); break;
     }
     t.fp_uglify(ugl);
-  } while(!is_sufficient(t));
+  } while(!is_sufficient(t,rat));
   t.to_file(filename);
   t.print();
 }
