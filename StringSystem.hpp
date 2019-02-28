@@ -201,6 +201,21 @@ struct StringSystem {
     sort_relators();
   }
 
+  /*
+   * Pick two generators, replace one of them by the
+   * product of the two
+   */
+  void fp_uglify_automorphism() noexcept {
+    gen_t s = random_gen();
+    gen_t t = inverse(random_gen());
+    word_t prod = multiply({s},{t});
+
+    for(int i = 0; i < relators.size();) {
+      auto &r = relators[i];
+      replace_word(r, {s}, prod);
+    }
+  }
+
   void fp_uglify_add_generator() noexcept {
     if(size() <= 1)return;
     auto g = add_generator();
@@ -293,7 +308,8 @@ struct StringSystem {
 
   typedef enum {
     SHORTCUT,
-    REMOVE,
+    /* REMOVE, */
+    AUTOMORPHISM,
     /* GENERATE, */
     /* RELATE, */
     /* REPLACE, */
@@ -418,9 +434,12 @@ struct StringSystem {
       case SHORTCUT:
         fp_add_shortcut(random_word(5));
       break;
-      case REMOVE:
+     /* case REMOVE:
         fp_uglify_add_generator();
-      break;
+	break; */
+      case AUTOMORPHISM:
+	fp_uglify_automorphism();
+        break;
       /* case GENERATE: */
         /* fp_add_generator(random_identity()); */
       /* break; */
